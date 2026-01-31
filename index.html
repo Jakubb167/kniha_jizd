@@ -299,7 +299,9 @@
         }
 
         .pallets-input {
-            width: 100px;
+            width: 65px !important;
+            font-size: 14px;
+            padding: 10px 6px;
         }
     </style>
 </head>
@@ -353,16 +355,12 @@
             </div>
 
             <div class="form-group">
-                <label for="pallets">Počet palet:</label>
-                <input type="number" id="pallets" placeholder="0" class="pallets-input" min="0">
-            </div>
-
-            <div class="form-group">
                 <label>Místa:</label>
                 <div id="locationsContainer">
                     <div class="location-entry">
                         <input type="text" class="location-input" placeholder="Zadejte místo">
-                        <input type="time" class="time-input" placeholder="Čas">
+                        <input type="time" class="time-input">
+                        <input type="number" class="pallets-input" placeholder="Palety" min="0">
                     </div>
                 </div>
                 <button class="add-location" onclick="addLocation()">+ Přidat místo</button>
@@ -487,7 +485,8 @@
             locationEntry.className = 'location-entry';
             locationEntry.innerHTML = `
                 <input type="text" class="location-input" placeholder="Zadejte místo">
-                <input type="time" class="time-input" placeholder="Čas">
+                <input type="time" class="time-input">
+                <input type="number" class="pallets-input" placeholder="Palety" min="0">
                 <button class="remove-location" onclick="removeLocation(this)">✕</button>
             `;
             container.appendChild(locationEntry);
@@ -501,15 +500,19 @@
             const vehicle = document.getElementById('vehicle').value;
             const kmStart = document.getElementById('kmStart').value;
             const kmEnd = document.getElementById('kmEnd').value;
-            const pallets = document.getElementById('pallets').value || '0';
             
             const locationEntries = document.querySelectorAll('.location-entry');
             const locations = [];
             locationEntries.forEach(entry => {
                 const place = entry.querySelector('.location-input').value;
                 const time = entry.querySelector('.time-input').value;
+                const pallets = entry.querySelector('.pallets-input').value;
                 if (place) {
-                    locations.push({ place, time });
+                    locations.push({ 
+                        place, 
+                        time: time || null,
+                        pallets: pallets ? parseInt(pallets) : null
+                    });
                 }
             });
 
@@ -534,7 +537,6 @@
                 vehicle,
                 kmStart: parseInt(kmStart),
                 kmEnd: parseInt(kmEnd),
-                pallets: parseInt(pallets),
                 locations
             };
 
@@ -553,13 +555,13 @@
             document.getElementById('vehicle').value = '';
             document.getElementById('kmStart').value = '';
             document.getElementById('kmEnd').value = '';
-            document.getElementById('pallets').value = '';
             
             const container = document.getElementById('locationsContainer');
             container.innerHTML = `
                 <div class="location-entry">
                     <input type="text" class="location-input" placeholder="Zadejte místo">
-                    <input type="time" class="time-input" placeholder="Čas">
+                    <input type="time" class="time-input">
+                    <input type="number" class="pallets-input" placeholder="Palety" min="0">
                 </div>
             `;
         }
@@ -613,9 +615,16 @@
                 const date = new Date(trip.date);
                 const dateStr = date.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 const kmDriven = trip.kmEnd - trip.kmStart;
+                
                 const locationsStr = trip.locations.map(loc => {
-                    return loc.time ? `${loc.place} (${loc.time})` : loc.place;
+                    let text = loc.place;
+                    if (loc.time) text += ` (${loc.time})`;
+                    if (loc.pallets) text += ` [${loc.pallets} palet]`;
+                    return text;
                 }).join(', ');
+
+                // Celkový počet palet
+                const totalPallets = trip.locations.reduce((sum, loc) => sum + (loc.pallets || 0), 0);
 
                 return `
                     <tr>
@@ -624,7 +633,7 @@
                         <td>${trip.kmStart}</td>
                         <td>${trip.kmEnd}</td>
                         <td><strong>${kmDriven} km</strong></td>
-                        <td>${trip.pallets || 0}</td>
+                        <td>${totalPallets > 0 ? totalPallets : '-'}</td>
                         <td style="max-width: 200px;">${locationsStr}</td>
                         <td><button class="delete-btn" onclick="deleteTrip(${index})">Smazat</button></td>
                     </tr>
