@@ -1006,11 +1006,6 @@
                 return;
             }
 
-            if (!kmStart || !kmEnd) {
-                alert('Prosím vyplňte stav kilometrů');
-                return;
-            }
-
             if (locations.length === 0) {
                 alert('Prosím zadejte alespoň jedno místo');
                 return;
@@ -1019,8 +1014,8 @@
             const tripData = {
                 date: selectedDate.toISOString(),
                 vehicle,
-                kmStart: parseFloat(kmStart),
-                kmEnd: parseFloat(kmEnd),
+                kmStart: kmStart ? parseFloat(kmStart) : null,
+                kmEnd: kmEnd ? parseFloat(kmEnd) : null,
                 locations,
                 notes: notes || null
             };
