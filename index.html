@@ -669,12 +669,51 @@
                     <label>Místa:</label>
                     <div id="locationsContainerSheet">
                         <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Zadejte místo">
+                            <input type="text" class="location-input" placeholder="Místo 1">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 2">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 3">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 4">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 5">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 6">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 7">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 8">
                             <input type="time" class="time-input">
                             <input type="number" class="pallets-input" placeholder="Palety" min="0">
                         </div>
                     </div>
-                    <button class="add-location" onclick="addLocationSheet()">+ Přidat místo</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="notesSheet">Poznámky:</label>
+                    <textarea id="notesSheet" placeholder="Volitelné poznámky k jízdě..." rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 15px; font-family: inherit; resize: vertical;"></textarea>
                 </div>
 
                 <button class="save-button" onclick="saveTripFromSheet()">Uložit záznam</button>
@@ -855,6 +894,11 @@
                             
                             <div class="trip-detail-label" style="margin-top: 10px;">Místa</div>
                             <div class="trip-detail-value">${locationsStr}</div>
+                            
+                            ${trip.notes ? `
+                                <div class="trip-detail-label" style="margin-top: 10px;">Poznámky</div>
+                                <div class="trip-detail-value" style="white-space: pre-wrap;">${trip.notes}</div>
+                            ` : ''}
                         </div>
                     `;
                 }).join('');
@@ -936,23 +980,11 @@
             document.getElementById('tripForm').style.display = 'none';
         }
 
-        function addLocationSheet() {
-            const container = document.getElementById('locationsContainerSheet');
-            const locationEntry = document.createElement('div');
-            locationEntry.className = 'location-entry';
-            locationEntry.innerHTML = `
-                <input type="text" class="location-input" placeholder="Zadejte místo">
-                <input type="time" class="time-input">
-                <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                <button class="remove-location" onclick="removeLocation(this)">✕</button>
-            `;
-            container.appendChild(locationEntry);
-        }
-
         async function saveTripFromSheet() {
             const vehicle = document.getElementById('vehicleSheet').value;
             const kmStart = document.getElementById('kmStartSheet').value;
             const kmEnd = document.getElementById('kmEndSheet').value;
+            const notes = document.getElementById('notesSheet').value;
             
             const locationEntries = document.querySelectorAll('#locationsContainerSheet .location-entry');
             const locations = [];
@@ -989,7 +1021,8 @@
                 vehicle,
                 kmStart: parseFloat(kmStart),
                 kmEnd: parseFloat(kmEnd),
-                locations
+                locations,
+                notes: notes || null
             };
 
             try {
@@ -1022,15 +1055,15 @@
             document.getElementById('vehicleSheet').value = '';
             document.getElementById('kmStartSheet').value = '';
             document.getElementById('kmEndSheet').value = '';
+            document.getElementById('notesSheet').value = '';
             
-            const container = document.getElementById('locationsContainerSheet');
-            container.innerHTML = `
-                <div class="location-entry">
-                    <input type="text" class="location-input" placeholder="Zadejte místo">
-                    <input type="time" class="time-input">
-                    <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                </div>
-            `;
+            // Vyčistit všechna pole míst
+            const locationEntries = document.querySelectorAll('#locationsContainerSheet .location-entry');
+            locationEntries.forEach(entry => {
+                entry.querySelector('.location-input').value = '';
+                entry.querySelector('.time-input').value = '';
+                entry.querySelector('.pallets-input').value = '';
+            });
         }
 
         function showForm() {
