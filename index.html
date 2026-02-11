@@ -975,6 +975,21 @@
             document.getElementById('formDate').textContent = selectedDate.toLocaleDateString('cs-CZ', options);
         }
 
+        // Skrýt/zobrazit pole pro palety podle vybraného vozidla
+        document.getElementById('vehicleSheet').addEventListener('change', function() {
+            const isPeugeot = this.value === 'peugeot';
+            const palletsInputs = document.querySelectorAll('.pallets-input');
+            
+            palletsInputs.forEach(input => {
+                if (isPeugeot) {
+                    input.style.display = 'none';
+                    input.value = ''; // Vyčistit hodnotu
+                } else {
+                    input.style.display = 'block';
+                }
+            });
+        });
+
         function showDetailInSheet() {
             document.getElementById('tripDetail').style.display = 'block';
             document.getElementById('tripForm').style.display = 'none';
@@ -1201,14 +1216,32 @@
         async function loadTripsForCalendar() {
             try {
                 const response = await fetch(`${API_URL}/get_trips.php`);
-                const result = await response.json();
+                const text = await response.text();
+                
+                console.log('Backend response:', text);
+                
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    console.error('JSON parse error:', e);
+                    console.error('Response text:', text);
+                    alert('Chyba: Backend nevrátil platný JSON. Podívejte se do konzole (F12) pro detaily.');
+                    return;
+                }
 
                 if (result.success) {
                     allTripsData = result.trips;
                     renderCalendar();
+                } else {
+                    console.error('Backend error:', result.error);
+                    if (result.debug_response) {
+                        console.error('Debug response:', result.debug_response);
+                    }
                 }
             } catch (error) {
                 console.error('Chyba při načítání jízd pro kalendář:', error);
+                alert('Chyba při načítání dat: ' + error.message);
             }
         }
 
