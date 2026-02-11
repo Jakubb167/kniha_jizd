@@ -708,6 +708,41 @@
                             <input type="time" class="time-input">
                             <input type="number" class="pallets-input" placeholder="Palety" min="0">
                         </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 9">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 10">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 11">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 12">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 13">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 14">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
+                        <div class="location-entry">
+                            <input type="text" class="location-input" placeholder="Místo 15">
+                            <input type="time" class="time-input">
+                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
+                        </div>
                     </div>
                 </div>
 
@@ -1044,7 +1079,18 @@
                     body: JSON.stringify(tripData)
                 });
 
-                const result = await response.json();
+                const text = await response.text();
+                console.log('Save response:', text);
+                
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    console.error('JSON parse error:', e);
+                    console.error('Response text:', text);
+                    alert('Chyba: Backend nevrátil platný JSON při ukládání.\n\nOdpověď: ' + text.substring(0, 200));
+                    return;
+                }
 
                 if (result.success) {
                     alert('Záznam byl úspěšně uložen!');
