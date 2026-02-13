@@ -24,7 +24,7 @@
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 20px;
-            padding-bottom: 180px; /* Místo pro roletku */
+            padding-bottom: 20px;
             min-height: calc(100vh - 20px);
         }
 
@@ -157,13 +157,17 @@
             border-radius: 20px 20px 0 0;
             box-shadow: 0 -2px 20px rgba(0,0,0,0.2);
             transition: transform 0.3s ease;
-            transform: translateY(0);
+            transform: translateY(calc(100% - 110px)); /* Zavřená - vidět jen náhled */
             z-index: 1000;
             max-height: 90vh;
         }
 
+        .bottom-sheet.collapsed {
+            transform: translateY(100%); /* Úplně skrytá */
+        }
+
         .bottom-sheet.expanded {
-            transform: translateY(0);
+            transform: translateY(0); /* Celá obrazovka */
         }
 
         .bottom-sheet-handle {
@@ -177,7 +181,7 @@
         .bottom-sheet-preview {
             padding: 10px 20px 20px 20px;
             cursor: pointer;
-            min-height: 140px;
+            min-height: 80px;
         }
 
         .bottom-sheet-preview:hover {
@@ -772,6 +776,24 @@
 
         const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
 
+        // NOVÁ POMOCNÁ FUNKCE: Převod data na lokální datum bez časové zóny
+        function getLocalDateString(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // NOVÁ POMOCNÁ FUNKCE: Normalizace data z databáze
+        function normalizeDate(dateString) {
+            // Pokud je datum ve formátu ISO (2025-01-15T00:00:00.000Z), vezme jen datum
+            if (dateString.includes('T')) {
+                return dateString.split('T')[0];
+            }
+            // Pokud je už jen datum (2025-01-15), vrátí ho tak jak je
+            return dateString;
+        }
+
         function renderCalendar() {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
@@ -800,17 +822,38 @@
 
             // Dny aktuálního měsíce
             const today = new Date();
+            const todayStr = getLocalDateString(today);
+            
             for (let day = 1; day <= lastDay.getDate(); day++) {
                 const date = new Date(year, month, day);
-                const isToday = date.toDateString() === today.toDateString();
+                const dateStr = getLocalDateString(date);
+                const isToday = dateStr === todayStr;
                 const className = isToday ? 'calendar-day today' : 'calendar-day';
                 
-                // Najít jízdy pro tento den
-                const dateStr = date.toISOString().split('T')[0];
-                const dayTrips = allTripsData.filter(trip => trip.date.startsWith(dateStr));
+                // OPRAVENO: Porovnání s normalizovanými daty
+                let dayTrips = allTripsData.filter(trip => {
+                    const tripDate = normalizeDate(trip.date);
+                    return tripDate === dateStr;
+                });
                 
-                // Získat unikátní vozidla pro tento den
-                const vehicles = [...new Set(dayTrips.map(trip => trip.vehicle))];
+                // DEDUPLIKACE - odstranění duplicitních záznamů
+                const uniqueTripsMap = new Map();
+                dayTrips.forEach(trip => {
+                    const key = `${trip.date}_${trip.vehicle}_${trip.kmStart}_${trip.kmEnd}`;
+                    if (!uniqueTripsMap.has(key)) {
+                        uniqueTripsMap.set(key, trip);
+                    }
+                });
+                dayTrips = Array.from(uniqueTripsMap.values());
+                
+                // Získat unikátní vozidla pro tento den (správně - bez duplikací)
+                const vehiclesMap = new Map();
+                dayTrips.forEach(trip => {
+                    if (!vehiclesMap.has(trip.vehicle)) {
+                        vehiclesMap.set(trip.vehicle, true);
+                    }
+                });
+                const vehicles = Array.from(vehiclesMap.keys());
                 
                 let dotsHTML = '';
                 if (vehicles.length > 0) {
@@ -854,8 +897,26 @@
         }
 
         function showBottomSheet(date) {
-            const dateStr = date.toISOString().split('T')[0];
-            const dayTrips = allTripsData.filter(trip => trip.date.startsWith(dateStr));
+            const dateStr = getLocalDateString(date);
+            
+            // OPRAVENO: Porovnání s normalizovanými daty
+            let dayTrips = allTripsData.filter(trip => {
+                const tripDate = normalizeDate(trip.date);
+                return tripDate === dateStr;
+            });
+            
+            // DEDUPLIKACE - odstranění duplicitních záznamů
+            // Unikátní klíč: datum + vozidlo + kmStart (nebo celý objekt)
+            const uniqueTripsMap = new Map();
+            dayTrips.forEach(trip => {
+                const key = `${trip.date}_${trip.vehicle}_${trip.kmStart}_${trip.kmEnd}`;
+                if (!uniqueTripsMap.has(key)) {
+                    uniqueTripsMap.set(key, trip);
+                } else {
+                    console.warn('Duplikát odstraněn:', trip);
+                }
+            });
+            dayTrips = Array.from(uniqueTripsMap.values());
             
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             const formattedDate = date.toLocaleDateString('cs-CZ', options);
@@ -869,19 +930,21 @@
                     <div style="margin-top: 10px; font-size: 13px; color: #666;">Klikněte pro zapsání jízdy</div>
                 `;
             } else {
-                // Získat unikátní vozidla
-                const vehicles = [...new Set(dayTrips.map(trip => ({
-                    key: trip.vehicle,
-                    name: trip.vehicleName
-                })))];
+                // Získat unikátní vozidla (správně - bez duplikací)
+                const vehiclesMap = new Map();
+                dayTrips.forEach(trip => {
+                    if (!vehiclesMap.has(trip.vehicle)) {
+                        vehiclesMap.set(trip.vehicle, trip.vehicleName);
+                    }
+                });
                 
                 const totalKm = dayTrips.reduce((sum, trip) => sum + (trip.kmEnd - trip.kmStart), 0);
                 const totalPallets = dayTrips.reduce((sum, trip) => sum + trip.totalPallets, 0);
                 
-                const vehiclesHTML = vehicles.map(v => `
+                const vehiclesHTML = Array.from(vehiclesMap.entries()).map(([key, name]) => `
                     <div class="trip-preview-vehicle">
-                        <div class="trip-preview-dot vehicle-dot ${v.key}"></div>
-                        <span>${v.name}</span>
+                        <div class="trip-preview-dot vehicle-dot ${key}"></div>
+                        <span>${name}</span>
                     </div>
                 `).join('');
                 
@@ -899,6 +962,19 @@
             
             // Nastavit detail
             document.getElementById('detailDate').textContent = formattedDate;
+            
+            console.log('Debug - dayTrips pro datum ' + dateStr + ':', dayTrips);
+            console.log('Počet jízd:', dayTrips.length);
+            dayTrips.forEach((trip, index) => {
+                console.log(`Jízda ${index + 1}:`, {
+                    vehicle: trip.vehicle,
+                    vehicleName: trip.vehicleName,
+                    kmStart: trip.kmStart,
+                    kmEnd: trip.kmEnd,
+                    datum: trip.datum,
+                    date: trip.date
+                });
+            });
             
             if (dayTrips.length === 0) {
                 document.getElementById('tripsList').innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">Žádné záznamy o jízdách</p>';
@@ -941,11 +1017,16 @@
                 document.getElementById('tripsList').innerHTML = tripsHTML;
             }
             
-            // Roletka je vždy viditelná, jen zavřeme expanded stav pokud byl otevřený
+            // Zobrazit roletku s náhledem (NE expanded)
             const sheet = document.getElementById('bottomSheet');
             sheet.classList.remove('expanded');
+            sheet.classList.remove('collapsed');
             
-            // Skrýt overlay pokud je otevřený
+            // Ujistit se, že je detail viditelný a formulář skrytý
+            document.getElementById('tripDetail').style.display = 'block';
+            document.getElementById('tripForm').style.display = 'none';
+            
+            // Skrýt overlay
             const overlay = document.getElementById('overlay');
             overlay.classList.remove('visible');
         }
@@ -954,17 +1035,12 @@
             const sheet = document.getElementById('bottomSheet');
             const overlay = document.getElementById('overlay');
             
-            // Pokud nejsou žádné jízdy, rovnou otevři formulář
-            const dateStr = selectedDate.toISOString().split('T')[0];
-            const dayTrips = allTripsData.filter(trip => trip.date.startsWith(dateStr));
-            
-            if (dayTrips.length === 0) {
-                openFormForSelectedDate();
-                return;
-            }
-            
             sheet.classList.add('expanded');
+            sheet.classList.remove('collapsed');
             overlay.classList.add('visible');
+            
+            // Zobrazit detail (skrýt formulář pokud je otevřený)
+            showDetailInSheet();
         }
 
         function closeBottomSheet() {
@@ -972,30 +1048,7 @@
             const overlay = document.getElementById('overlay');
             
             sheet.classList.remove('expanded');
-            overlay.classList.remove('visible');
-        }
-
-        function expandBottomSheet() {
-            const sheet = document.getElementById('bottomSheet');
-            const overlay = document.getElementById('overlay');
-            
-            // Pokud nejsou žádné jízdy, rovnou otevři formulář
-            const dateStr = selectedDate.toISOString().split('T')[0];
-            const dayTrips = allTripsData.filter(trip => trip.date.startsWith(dateStr));
-            
-            sheet.classList.add('expanded');
-            overlay.classList.add('visible');
-            
-            if (dayTrips.length === 0) {
-                showFormInSheet();
-            }
-        }
-
-        function closeBottomSheet() {
-            const sheet = document.getElementById('bottomSheet');
-            const overlay = document.getElementById('overlay');
-            
-            sheet.classList.remove('expanded');
+            sheet.classList.add('collapsed'); // Úplně skrýt
             overlay.classList.remove('visible');
             
             // Resetovat zobrazení v roletce na detail
@@ -1061,6 +1114,7 @@
                 return;
             }
 
+            // OPRAVENO: Vytvoření správného ISO data pro uložení
             const tripData = {
                 date: selectedDate.toISOString(),
                 vehicle,
@@ -1278,6 +1332,30 @@
 
                 if (result.success) {
                     allTripsData = result.trips;
+                    console.log('Celkem načteno jízd:', allTripsData.length);
+                    console.log('Všechna data z backendu:', allTripsData);
+                    
+                    // Debug - zkontrolovat duplicity
+                    const duplicates = [];
+                    const seen = new Map();
+                    allTripsData.forEach((trip, index) => {
+                        const key = `${trip.date}_${trip.vehicle}_${trip.kmStart}_${trip.kmEnd}`;
+                        if (seen.has(key)) {
+                            duplicates.push({
+                                index,
+                                key,
+                                trip,
+                                original: seen.get(key)
+                            });
+                        } else {
+                            seen.set(key, { index, trip });
+                        }
+                    });
+                    
+                    if (duplicates.length > 0) {
+                        console.warn('⚠️ BACKEND VRACÍ DUPLICITNÍ DATA:', duplicates);
+                    }
+                    
                     renderCalendar();
                 } else {
                     console.error('Backend error:', result.error);
@@ -1374,6 +1452,9 @@
 
         // Click na preview otevře detail
         document.getElementById('sheetPreview').addEventListener('click', expandBottomSheet);
+
+        // Inicializace - skrýt roletku na začátku
+        document.getElementById('bottomSheet').classList.add('collapsed');
 
         // Inicializace kalendáře při načtení stránky
         loadTripsForCalendar();
