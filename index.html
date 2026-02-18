@@ -5,534 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kniha jízd</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: #f5f5f5;
-            padding: 10px;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            padding-bottom: 20px;
-            min-height: calc(100vh - 20px);
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-
-        /* Kalendář */
-        .calendar-view {
-            display: block;
-        }
-
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .calendar-header button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .calendar-header h2 {
-            font-size: 20px;
-            color: #333;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            margin-bottom: 20px;
-        }
-
-        .calendar-day-header {
-            text-align: center;
-            font-weight: bold;
-            padding: 8px 5px;
-            color: #666;
-            font-size: 13px;
-        }
-
-        .calendar-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            background-color: white;
-            transition: all 0.2s;
-        }
-
-        .calendar-day:hover {
-            background-color: #e3f2fd;
-            border-color: #007bff;
-        }
-
-        .calendar-day.other-month {
-            color: #ccc;
-        }
-
-        .calendar-day.today {
-            background-color: #007bff;
-            color: white;
-            font-weight: bold;
-        }
-
-        /* Tečky pro vozidla v kalendáři */
-        .calendar-day-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            width: 100%;
-            height: 100%;
-        }
-
-        .vehicle-dots {
-            display: flex;
-            gap: 2px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 100%;
-        }
-
-        .vehicle-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            border: 1px solid #000;
-        }
-
-        .vehicle-dot.cervene-iveco {
-            background-color: #dc3545;
-        }
-
-        .vehicle-dot.iveco-mysak {
-            background-color: #fff;
-        }
-
-        .vehicle-dot.atego {
-            background-color: #6c757d;
-        }
-
-        .vehicle-dot.peugeot {
-            background-color: #000;
-        }
-
-        /* Roletka (Bottom Sheet) */
-        .bottom-sheet {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -2px 20px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
-            transform: translateY(calc(100% - 110px)); /* Zavřená - vidět jen náhled */
-            z-index: 1000;
-            max-height: 90vh;
-        }
-
-        .bottom-sheet.collapsed {
-            transform: translateY(100%); /* Úplně skrytá */
-        }
-
-        .bottom-sheet.expanded {
-            transform: translateY(0); /* Celá obrazovka */
-        }
-
-        .bottom-sheet-handle {
-            width: 40px;
-            height: 4px;
-            background: #ddd;
-            border-radius: 2px;
-            margin: 12px auto 8px auto;
-        }
-
-        .bottom-sheet-preview {
-            padding: 10px 20px 20px 20px;
-            cursor: pointer;
-            min-height: 80px;
-        }
-
-        .bottom-sheet-preview:hover {
-            background-color: #f8f9fa;
-        }
-
-        .bottom-sheet-content {
-            padding: 0 20px 20px 20px;
-            overflow-y: auto;
-            max-height: calc(90vh - 100px);
-            display: none;
-        }
-
-        .bottom-sheet.expanded .bottom-sheet-preview {
-            display: none;
-        }
-
-        .bottom-sheet.expanded .bottom-sheet-content {
-            display: block;
-        }
-
-        .trip-preview {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .trip-preview h3 {
-            margin: 0;
-            font-size: 18px;
-            color: #333;
-            font-weight: 600;
-        }
-
-        .trip-preview-info {
-            font-size: 14px;
-            color: #666;
-            line-height: 1.5;
-        }
-
-        .trip-preview-vehicles {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 5px;
-        }
-
-        .trip-preview-vehicle {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            font-size: 13px;
-        }
-
-        .trip-preview-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            border: 1px solid #000;
-        }
-
-        .trip-detail {
-            display: none;
-        }
-
-        .trip-detail.visible {
-            display: block;
-        }
-
-        .trip-detail h2 {
-            margin: 0 0 20px 0;
-            font-size: 22px;
-            color: #333;
-        }
-
-        .trip-detail-section {
-            margin-bottom: 15px;
-        }
-
-        .trip-detail-label {
-            font-weight: 600;
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .trip-detail-value {
-            font-size: 16px;
-            color: #333;
-        }
-
-        .write-trip-btn {
-            width: 100%;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        .write-trip-btn:hover {
-            background-color: #218838;
-        }
-
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.3);
-            display: none;
-            z-index: 999;
-        }
-
-        .overlay.visible {
-            display: block;
-        }
-
-        .close-sheet-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #666;
-            cursor: pointer;
-            float: right;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-        }
-
-        /* Formulář pro záznam jízdy */
-        .form-view {
-            display: none;
-        }
-
-        .back-button {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        select, input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 15px;
-        }
-
-        input[type="time"] {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 15px;
-        }
-
-        .km-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .location-entry {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-            align-items: flex-start;
-        }
-
-        .location-input {
-            flex: 1;
-            font-size: 15px;
-        }
-
-        .time-input {
-            width: 90px !important;
-            font-size: 14px;
-            padding: 10px 6px;
-        }
-
-        .remove-location {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 12px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .add-location {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .save-button {
-            width: 100%;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 5px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        .save-button:hover {
-            background-color: #0056b3;
-        }
-
-        .date-display {
-            text-align: center;
-            font-size: 18px;
-            color: #666;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-        }
-
-        /* Pohled tabulky */
-        .table-view {
-            display: none;
-        }
-
-        .view-toggle {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .view-toggle button {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #007bff;
-            background-color: white;
-            color: #007bff;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .view-toggle button.active {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .trips-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-
-        .trips-table th,
-        .trips-table td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .trips-table th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            color: #333;
-            position: sticky;
-            top: 0;
-        }
-
-        .trips-table tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-
-        .table-container {
-            overflow-x: auto;
-        }
-
-        .delete-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .delete-btn:hover {
-            background-color: #c82333;
-        }
-
-        .pallets-input {
-            width: 80px !important;
-            font-size: 14px;
-            padding: 10px 6px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background-color: #f5f5f5; padding: 10px; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; padding-bottom: 20px; min-height: calc(100vh - 20px); }
+        h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
+        .calendar-view { display: block; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-header button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        .calendar-header h2 { font-size: 20px; color: #333; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 20px; }
+        .calendar-day-header { text-align: center; font-weight: bold; padding: 8px 5px; color: #666; font-size: 13px; }
+        .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; font-size: 14px; background-color: white; transition: all 0.2s; }
+        .calendar-day:hover { background-color: #e3f2fd; border-color: #007bff; }
+        .calendar-day.other-month { color: #ccc; }
+        .calendar-day.today { background-color: #007bff; color: white; font-weight: bold; }
+        .calendar-day-content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 100%; height: 100%; }
+        .vehicle-dots { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; max-width: 100%; }
+        .vehicle-dot { width: 6px; height: 6px; border-radius: 50%; border: 1px solid #000; }
+        .vehicle-dot.cervene-iveco { background-color: #dc3545; }
+        .vehicle-dot.iveco-mysak { background-color: #fff; }
+        .vehicle-dot.atego { background-color: #6c757d; }
+        .vehicle-dot.peugeot { background-color: #000; }
+        .bottom-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -2px 20px rgba(0,0,0,0.2); transition: transform 0.3s ease; transform: translateY(calc(100% - 110px)); z-index: 1000; max-height: 90vh; }
+        .bottom-sheet.collapsed { transform: translateY(100%); }
+        .bottom-sheet.expanded { transform: translateY(0); }
+        .bottom-sheet-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 12px auto 8px auto; }
+        .bottom-sheet-preview { padding: 10px 20px 20px 20px; cursor: pointer; min-height: 80px; }
+        .bottom-sheet-preview:hover { background-color: #f8f9fa; }
+        .bottom-sheet-content { padding: 0 20px 20px 20px; overflow-y: auto; max-height: calc(90vh - 100px); display: none; }
+        .bottom-sheet.expanded .bottom-sheet-preview { display: none; }
+        .bottom-sheet.expanded .bottom-sheet-content { display: block; }
+        .trip-preview { display: flex; flex-direction: column; gap: 8px; }
+        .trip-preview h3 { margin: 0; font-size: 18px; color: #333; font-weight: 600; }
+        .trip-preview-info { font-size: 14px; color: #666; line-height: 1.5; }
+        .trip-preview-vehicles { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px; }
+        .trip-preview-vehicle { display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: #f8f9fa; border-radius: 12px; font-size: 13px; }
+        .trip-preview-dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid #000; }
+        .trip-detail { display: none; }
+        .trip-detail h2 { margin: 0 0 20px 0; font-size: 22px; color: #333; }
+        .trip-detail-section { margin-bottom: 15px; }
+        .trip-detail-label { font-weight: 600; color: #666; font-size: 14px; margin-bottom: 5px; }
+        .trip-detail-value { font-size: 16px; color: #333; }
+        .write-trip-btn { width: 100%; background-color: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .write-trip-btn:hover { background-color: #218838; }
+        .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: none; z-index: 999; }
+        .overlay.visible { display: block; }
+        .close-sheet-btn { background: none; border: none; font-size: 24px; color: #666; cursor: pointer; float: right; padding: 0; width: 30px; height: 30px; }
+        .form-view { display: none; }
+        .back-button { background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; }
+        select, input[type="number"], input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 15px; }
+        input[type="time"] { padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 15px; }
+        .km-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .location-entry { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; }
+        .location-input { flex: 1; font-size: 15px; }
+        .time-input { width: 90px !important; font-size: 14px; padding: 10px 6px; }
+        .remove-location { background-color: #dc3545; color: white; border: none; padding: 12px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .add-location { background-color: #28a745; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 5px; }
+        .save-button { width: 100%; background-color: #007bff; color: white; border: none; padding: 15px; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .save-button:hover { background-color: #0056b3; }
+        .date-display { text-align: center; font-size: 18px; color: #666; margin-bottom: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; }
+        .table-view { display: none; }
+        .view-toggle { display: flex; gap: 10px; margin-bottom: 20px; }
+        .view-toggle button { flex: 1; padding: 12px; border: 2px solid #007bff; background-color: white; color: #007bff; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s; }
+        .view-toggle button.active { background-color: #007bff; color: white; }
+        .trips-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .trips-table th, .trips-table td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        .trips-table th { background-color: #f8f9fa; font-weight: 600; color: #333; position: sticky; top: 0; }
+        .trips-table tr:hover { background-color: #f8f9fa; }
+        .no-data { text-align: center; padding: 40px; color: #999; }
+        .table-container { overflow-x: auto; }
+        .delete-btn { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        .delete-btn:hover { background-color: #c82333; }
+        .pallets-input { width: 80px !important; font-size: 14px; padding: 10px 6px; }
+        .edit-btn { background-color: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; margin-top: 10px; display: inline-block; }
+        .edit-btn:hover { background-color: #0056b3; }
+        .trip-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📖 Kniha jízd</h1>
-
         <div class="view-toggle">
             <button id="calendarBtn" class="active" onclick="switchView('calendar')">📅 Kalendář</button>
             <button id="tableBtn" onclick="switchView('table')">📊 Tabulka</button>
         </div>
 
-        <!-- Pohled kalendáře -->
         <div class="calendar-view" id="calendarView">
             <div class="calendar-header">
                 <button onclick="previousMonth()">‹</button>
@@ -542,12 +101,9 @@
             <div class="calendar-grid" id="calendar"></div>
         </div>
 
-        <!-- Formulář pro záznam jízdy -->
         <div class="form-view" id="formView">
             <button class="back-button" onclick="showCalendar()">← Zpět na kalendář</button>
-            
             <div class="date-display" id="selectedDate"></div>
-
             <div class="form-group">
                 <label for="vehicle">Vozidlo:</label>
                 <select id="vehicle">
@@ -558,21 +114,19 @@
                     <option value="peugeot">Peugeot</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label>Stav kilometrů:</label>
                 <div class="km-inputs">
                     <div>
-                        <label for="kmStart" style="font-size: 14px; color: #666;">Počáteční</label>
+                        <label for="kmStart" style="font-size:14px;color:#666;">Počáteční</label>
                         <input type="number" id="kmStart" placeholder="0" step="0.1">
                     </div>
                     <div>
-                        <label for="kmEnd" style="font-size: 14px; color: #666;">Konečný</label>
+                        <label for="kmEnd" style="font-size:14px;color:#666;">Konečný</label>
                         <input type="number" id="kmEnd" placeholder="0" step="0.1">
                     </div>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>Místa:</label>
                 <div id="locationsContainer">
@@ -584,66 +138,44 @@
                 </div>
                 <button class="add-location" onclick="addLocation()">+ Přidat místo</button>
             </div>
-
             <button class="save-button" onclick="saveTrip()">Uložit záznam</button>
         </div>
 
-        <!-- Pohled tabulky -->
         <div class="table-view" id="tableView">
             <div class="table-container">
                 <table class="trips-table">
                     <thead>
                         <tr>
-                            <th>Datum</th>
-                            <th>Vozidlo</th>
-                            <th>Km start</th>
-                            <th>Km konec</th>
-                            <th>Ujeto</th>
-                            <th>Palety</th>
-                            <th>Místa</th>
-                            <th>Akce</th>
+                            <th>Datum</th><th>Vozidlo</th><th>Km start</th><th>Km konec</th>
+                            <th>Ujeto</th><th>Palety</th><th>Místa</th><th>Akce</th>
                         </tr>
                     </thead>
-                    <tbody id="tripsTableBody">
-                    </tbody>
+                    <tbody id="tripsTableBody"></tbody>
                 </table>
-                <div id="noDataMessage" class="no-data" style="display: none;">
-                    Zatím nejsou žádné záznamy
-                </div>
+                <div id="noDataMessage" class="no-data" style="display:none;">Zatím nejsou žádné záznamy</div>
             </div>
         </div>
     </div>
 
-    <!-- Overlay pro roletku -->
     <div class="overlay" id="overlay" onclick="closeBottomSheet()"></div>
 
-    <!-- Roletka (Bottom Sheet) -->
     <div class="bottom-sheet" id="bottomSheet">
-        <div class="bottom-sheet-handle" id="sheetHandle"></div>
-        
-        <!-- Náhled (když je roletka zavřená) -->
+        <div class="bottom-sheet-handle"></div>
         <div class="bottom-sheet-preview" id="sheetPreview">
             <div class="trip-preview">
                 <h3 id="previewDate">Vyberte den v kalendáři</h3>
                 <div class="trip-preview-info" id="previewInfo">Klikněte na datum pro zobrazení nebo zapsání jízdy</div>
             </div>
         </div>
-
-        <!-- Detailní obsah (když je roletka otevřená) -->
         <div class="bottom-sheet-content" id="sheetContent">
             <button class="close-sheet-btn" onclick="closeBottomSheet()">×</button>
-            
-            <!-- Detail jízd -->
             <div class="trip-detail" id="tripDetail">
                 <h2 id="detailDate"></h2>
                 <div id="tripsList"></div>
                 <button class="write-trip-btn" onclick="showFormInSheet()">📝 Zapsat jízdu</button>
             </div>
-
-            <!-- Formulář pro zapsání jízdy -->
-            <div class="trip-form" id="tripForm" style="display: none;">
+            <div class="trip-form" id="tripForm" style="display:none;">
                 <h2 id="formDate"></h2>
-
                 <div class="form-group">
                     <label for="vehicleSheet">Vozidlo:</label>
                     <select id="vehicleSheet">
@@ -654,242 +186,123 @@
                         <option value="peugeot">Peugeot</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Stav kilometrů:</label>
                     <div class="km-inputs">
                         <div>
-                            <label for="kmStartSheet" style="font-size: 14px; color: #666;">Počáteční</label>
+                            <label for="kmStartSheet" style="font-size:14px;color:#666;">Počáteční</label>
                             <input type="number" id="kmStartSheet" placeholder="0" step="0.1">
                         </div>
                         <div>
-                            <label for="kmEndSheet" style="font-size: 14px; color: #666;">Konečný</label>
+                            <label for="kmEndSheet" style="font-size:14px;color:#666;">Konečný</label>
                             <input type="number" id="kmEndSheet" placeholder="0" step="0.1">
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Místa:</label>
                     <div id="locationsContainerSheet">
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 1">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 2">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 3">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 4">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 5">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 6">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 7">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 8">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 9">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 10">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 11">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 12">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 13">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 14">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
-                        <div class="location-entry">
-                            <input type="text" class="location-input" placeholder="Místo 15">
-                            <input type="time" class="time-input">
-                            <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                        </div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 1"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 2"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 3"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 4"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 5"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 6"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 7"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 8"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 9"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 10"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 11"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 12"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 13"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 14"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
+                        <div class="location-entry"><input type="text" class="location-input" placeholder="Místo 15"><input type="time" class="time-input"><input type="number" class="pallets-input" placeholder="Palety" min="0"></div>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label for="notesSheet">Poznámky:</label>
-                    <textarea id="notesSheet" placeholder="Volitelné poznámky k jízdě..." rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 15px; font-family: inherit; resize: vertical;"></textarea>
+                    <textarea id="notesSheet" placeholder="Volitelné poznámky k jízdě..." rows="3" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:15px;font-family:inherit;resize:vertical;"></textarea>
                 </div>
-
-                <button class="save-button" onclick="saveTripFromSheet()">Uložit záznam</button>
-                <button class="back-button" onclick="showDetailInSheet()" style="margin-top: 10px; width: 100%;">← Zpět</button>
+                <button class="save-button" id="saveTripBtn" onclick="saveTripFromSheet()">Uložit záznam</button>
+                <button class="back-button" onclick="showDetailInSheet()" style="margin-top:10px;width:100%;">← Zpět</button>
             </div>
         </div>
     </div>
 
     <script>
-        // URL vašeho Cloudflare Workeru
         const API_URL = 'https://knihajizd.baborovsky-jakub.workers.dev';
-        
-        let currentDate = new Date();
-        let selectedDate = null;
-        let allTripsData = []; // Pro ukládání všech jízd pro zobrazení v kalendáři
 
-        const monthNames = [
-            'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
-            'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
-        ];
+        let currentDate   = new Date();
+        let selectedDate  = null;
+        let allTripsData  = [];
+        let currentDayTrips = [];
+        let editingTrip   = null;
 
-        const dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+        const monthNames = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+        const dayNames   = ['Po','Út','St','Čt','Pá','So','Ne'];
 
-        // NOVÁ POMOCNÁ FUNKCE: Převod data na lokální datum bez časové zóny
         function getLocalDateString(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
         }
 
-        // NOVÁ POMOCNÁ FUNKCE: Normalizace data z databáze
         function normalizeDate(dateString) {
-            // Pokud je datum ve formátu ISO (2025-01-15T00:00:00.000Z), vezme jen datum
-            if (dateString.includes('T')) {
-                return dateString.split('T')[0];
-            }
-            // Pokud je už jen datum (2025-01-15), vrátí ho tak jak je
-            return dateString;
+            return dateString.includes('T') ? dateString.split('T')[0] : dateString;
         }
 
         function renderCalendar() {
-            const year = currentDate.getFullYear();
+            const year  = currentDate.getFullYear();
             const month = currentDate.getMonth();
-
             document.getElementById('monthYear').textContent = `${monthNames[month]} ${year}`;
 
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
+            const firstDay   = new Date(year, month, 1);
+            const lastDay    = new Date(year, month + 1, 0);
             const prevLastDay = new Date(year, month, 0);
-
-            let dayOfWeek = firstDay.getDay();
+            let dayOfWeek    = firstDay.getDay();
             dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
             const calendarHTML = [];
+            dayNames.forEach(d => calendarHTML.push(`<div class="calendar-day-header">${d}</div>`));
 
-            // Hlavičky dnů
-            dayNames.forEach(day => {
-                calendarHTML.push(`<div class="calendar-day-header">${day}</div>`);
-            });
-
-            // Dny z předchozího měsíce
             for (let i = dayOfWeek - 1; i >= 0; i--) {
-                const day = prevLastDay.getDate() - i;
-                calendarHTML.push(`<div class="calendar-day other-month">${day}</div>`);
+                calendarHTML.push(`<div class="calendar-day other-month">${prevLastDay.getDate() - i}</div>`);
             }
 
-            // Dny aktuálního měsíce
-            const today = new Date();
-            const todayStr = getLocalDateString(today);
-            
+            const todayStr = getLocalDateString(new Date());
             for (let day = 1; day <= lastDay.getDate(); day++) {
-                const date = new Date(year, month, day);
-                const dateStr = getLocalDateString(date);
-                const isToday = dateStr === todayStr;
+                const dateStr  = getLocalDateString(new Date(year, month, day));
+                const isToday  = dateStr === todayStr;
                 const className = isToday ? 'calendar-day today' : 'calendar-day';
-                
-                // OPRAVENO: Porovnání s normalizovanými daty
-                let dayTrips = allTripsData.filter(trip => {
-                    const tripDate = normalizeDate(trip.date);
-                    return tripDate === dateStr;
+
+                let dayTrips = allTripsData.filter(t => normalizeDate(t.date) === dateStr);
+                const seen = new Map();
+                dayTrips.forEach(t => {
+                    const k = `${t.date}_${t.vehicle}_${t.kmStart}_${t.kmEnd}`;
+                    if (!seen.has(k)) seen.set(k, t);
                 });
-                
-                // DEDUPLIKACE - odstranění duplicitních záznamů
-                const uniqueTripsMap = new Map();
-                dayTrips.forEach(trip => {
-                    const key = `${trip.date}_${trip.vehicle}_${trip.kmStart}_${trip.kmEnd}`;
-                    if (!uniqueTripsMap.has(key)) {
-                        uniqueTripsMap.set(key, trip);
-                    }
-                });
-                dayTrips = Array.from(uniqueTripsMap.values());
-                
-                // Získat unikátní vozidla pro tento den (správně - bez duplikací)
-                const vehiclesMap = new Map();
-                dayTrips.forEach(trip => {
-                    if (!vehiclesMap.has(trip.vehicle)) {
-                        vehiclesMap.set(trip.vehicle, true);
-                    }
-                });
-                const vehicles = Array.from(vehiclesMap.keys());
-                
-                let dotsHTML = '';
-                if (vehicles.length > 0) {
-                    dotsHTML = '<div class="vehicle-dots">' + 
-                        vehicles.map(v => `<div class="vehicle-dot ${v}"></div>`).join('') +
-                        '</div>';
-                }
-                
+                dayTrips = Array.from(seen.values());
+
+                const vehicles = [...new Map(dayTrips.map(t => [t.vehicle, true])).keys()];
+                const dotsHTML = vehicles.length > 0
+                    ? '<div class="vehicle-dots">' + vehicles.map(v => `<div class="vehicle-dot ${v}"></div>`).join('') + '</div>'
+                    : '';
+
                 calendarHTML.push(`
-                    <div class="${className}" onclick="selectDate(${year}, ${month}, ${day})">
-                        <div class="calendar-day-content">
-                            <div>${day}</div>
-                            ${dotsHTML}
-                        </div>
-                    </div>
-                `);
+                    <div class="${className}" onclick="selectDate(${year},${month},${day})">
+                        <div class="calendar-day-content"><div>${day}</div>${dotsHTML}</div>
+                    </div>`);
             }
 
-            // Dny z následujícího měsíce
-            const remainingDays = 42 - calendarHTML.length + 7;
-            for (let day = 1; day <= remainingDays; day++) {
-                calendarHTML.push(`<div class="calendar-day other-month">${day}</div>`);
-            }
+            const remaining = 42 - calendarHTML.length + 7;
+            for (let d = 1; d <= remaining; d++) calendarHTML.push(`<div class="calendar-day other-month">${d}</div>`);
 
             document.getElementById('calendar').innerHTML = calendarHTML.join('');
         }
 
-        function previousMonth() {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            renderCalendar();
-        }
-
-        function nextMonth() {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            renderCalendar();
-        }
+        function previousMonth() { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); }
+        function nextMonth()     { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); }
 
         function selectDate(year, month, day) {
             selectedDate = new Date(year, month, day);
@@ -898,228 +311,236 @@
 
         function showBottomSheet(date) {
             const dateStr = getLocalDateString(date);
-            
-            // OPRAVENO: Porovnání s normalizovanými daty
-            let dayTrips = allTripsData.filter(trip => {
-                const tripDate = normalizeDate(trip.date);
-                return tripDate === dateStr;
+
+            let dayTrips = allTripsData.filter(t => normalizeDate(t.date) === dateStr);
+            const seen = new Map();
+            dayTrips.forEach(t => {
+                const k = `${t.date}_${t.vehicle}_${t.kmStart}_${t.kmEnd}`;
+                if (!seen.has(k)) seen.set(k, t);
             });
-            
-            // DEDUPLIKACE - odstranění duplicitních záznamů
-            // Unikátní klíč: datum + vozidlo + kmStart (nebo celý objekt)
-            const uniqueTripsMap = new Map();
-            dayTrips.forEach(trip => {
-                const key = `${trip.date}_${trip.vehicle}_${trip.kmStart}_${trip.kmEnd}`;
-                if (!uniqueTripsMap.has(key)) {
-                    uniqueTripsMap.set(key, trip);
-                } else {
-                    console.warn('Duplikát odstraněn:', trip);
-                }
-            });
-            dayTrips = Array.from(uniqueTripsMap.values());
-            
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dayTrips = Array.from(seen.values());
+            currentDayTrips = dayTrips;
+
+            const options = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
             const formattedDate = date.toLocaleDateString('cs-CZ', options);
-            
-            // Nastavit náhled
+
             document.getElementById('previewDate').textContent = formattedDate;
-            
+            document.getElementById('detailDate').textContent  = formattedDate;
+
             if (dayTrips.length === 0) {
                 document.getElementById('previewInfo').innerHTML = `
-                    <div style="color: #999; font-style: italic;">Žádné záznamy o jízdách</div>
-                    <div style="margin-top: 10px; font-size: 13px; color: #666;">Klikněte pro zapsání jízdy</div>
-                `;
+                    <div style="color:#999;font-style:italic;">Žádné záznamy o jízdách</div>
+                    <div style="margin-top:10px;font-size:13px;color:#666;">Klikněte pro zapsání jízdy</div>`;
+                document.getElementById('tripsList').innerHTML = '<p style="color:#999;text-align:center;padding:20px;">Žádné záznamy o jízdách</p>';
             } else {
-                // Získat unikátní vozidla (správně - bez duplikací)
                 const vehiclesMap = new Map();
-                dayTrips.forEach(trip => {
-                    if (!vehiclesMap.has(trip.vehicle)) {
-                        vehiclesMap.set(trip.vehicle, trip.vehicleName);
-                    }
-                });
-                
-                const totalKm = dayTrips.reduce((sum, trip) => sum + (trip.kmEnd - trip.kmStart), 0);
-                const totalPallets = dayTrips.reduce((sum, trip) => sum + trip.totalPallets, 0);
-                
-                const vehiclesHTML = Array.from(vehiclesMap.entries()).map(([key, name]) => `
-                    <div class="trip-preview-vehicle">
-                        <div class="trip-preview-dot vehicle-dot ${key}"></div>
-                        <span>${name}</span>
-                    </div>
-                `).join('');
-                
+                dayTrips.forEach(t => { if (!vehiclesMap.has(t.vehicle)) vehiclesMap.set(t.vehicle, t.vehicleName); });
+                const totalKm      = dayTrips.reduce((s, t) => s + (t.kmEnd - t.kmStart), 0);
+                const totalPallets = dayTrips.reduce((s, t) => s + t.totalPallets, 0);
+
                 document.getElementById('previewInfo').innerHTML = `
-                    <div style="margin-bottom: 8px;">
-                        ${dayTrips.length} ${dayTrips.length === 1 ? 'jízda' : 'jízdy'} • 
-                        ${totalKm} km
+                    <div style="margin-bottom:8px;">
+                        ${dayTrips.length} ${dayTrips.length === 1 ? 'jízda' : 'jízdy'} • ${totalKm} km
                         ${totalPallets > 0 ? ` • ${totalPallets} palet` : ''}
                     </div>
                     <div class="trip-preview-vehicles">
-                        ${vehiclesHTML}
-                    </div>
-                `;
-            }
-            
-            // Nastavit detail
-            document.getElementById('detailDate').textContent = formattedDate;
-            
-            console.log('Debug - dayTrips pro datum ' + dateStr + ':', dayTrips);
-            console.log('Počet jízd:', dayTrips.length);
-            dayTrips.forEach((trip, index) => {
-                console.log(`Jízda ${index + 1}:`, {
-                    vehicle: trip.vehicle,
-                    vehicleName: trip.vehicleName,
-                    kmStart: trip.kmStart,
-                    kmEnd: trip.kmEnd,
-                    datum: trip.datum,
-                    date: trip.date
-                });
-            });
-            
-            if (dayTrips.length === 0) {
-                document.getElementById('tripsList').innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">Žádné záznamy o jízdách</p>';
-            } else {
-                const tripsHTML = dayTrips.map(trip => {
+                        ${Array.from(vehiclesMap.entries()).map(([k,n]) => `
+                            <div class="trip-preview-vehicle">
+                                <div class="trip-preview-dot vehicle-dot ${k}"></div>
+                                <span>${n}</span>
+                            </div>`).join('')}
+                    </div>`;
+
+                document.getElementById('tripsList').innerHTML = dayTrips.map((trip, index) => {
                     const kmDriven = trip.kmEnd - trip.kmStart;
-                    const locationsStr = trip.locations.map(loc => {
-                        let text = loc.place;
-                        if (loc.time) text += ` (${loc.time})`;
-                        if (loc.pallets) text += ` [${loc.pallets} palet]`;
-                        return text;
+                    const locsStr  = trip.locations.map(l => {
+                        let t = l.place;
+                        if (l.time)    t += ` (${l.time})`;
+                        if (l.pallets) t += ` [${l.pallets} palet]`;
+                        return t;
                     }).join(', ');
-                    
+
                     return `
-                        <div class="trip-detail-section" style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                                <div class="vehicle-dot ${trip.vehicle}" style="width: 10px; height: 10px;"></div>
-                                <div class="trip-detail-value" style="font-weight: 600; font-size: 17px;">${trip.vehicleName}</div>
+                        <div class="trip-detail-section" style="border:1px solid #ddd;padding:15px;border-radius:8px;margin-bottom:15px;">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                                <div class="vehicle-dot ${trip.vehicle}" style="width:10px;height:10px;"></div>
+                                <div class="trip-detail-value" style="font-weight:600;font-size:17px;">${trip.vehicleName}</div>
                             </div>
-                            
                             <div class="trip-detail-label">Kilometry</div>
                             <div class="trip-detail-value">${trip.kmStart} → ${trip.kmEnd} (${kmDriven} km)</div>
-                            
-                            ${trip.totalPallets > 0 ? `
-                                <div class="trip-detail-label" style="margin-top: 10px;">Palety</div>
-                                <div class="trip-detail-value">${trip.totalPallets}</div>
-                            ` : ''}
-                            
-                            <div class="trip-detail-label" style="margin-top: 10px;">Místa</div>
-                            <div class="trip-detail-value">${locationsStr}</div>
-                            
-                            ${trip.notes ? `
-                                <div class="trip-detail-label" style="margin-top: 10px;">Poznámky</div>
-                                <div class="trip-detail-value" style="white-space: pre-wrap;">${trip.notes}</div>
-                            ` : ''}
-                        </div>
-                    `;
+                            ${trip.totalPallets > 0 ? `<div class="trip-detail-label" style="margin-top:10px;">Palety</div><div class="trip-detail-value">${trip.totalPallets}</div>` : ''}
+                            <div class="trip-detail-label" style="margin-top:10px;">Místa</div>
+                            <div class="trip-detail-value">${locsStr}</div>
+                            ${trip.notes ? `<div class="trip-detail-label" style="margin-top:10px;">Poznámky</div><div class="trip-detail-value" style="white-space:pre-wrap;">${trip.notes}</div>` : ''}
+                            <div class="trip-actions">
+                                <button class="edit-btn" data-trip-index="${index}">✏️ Upravit</button>
+                            </div>
+                        </div>`;
                 }).join('');
-                
-                document.getElementById('tripsList').innerHTML = tripsHTML;
+
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        editTrip(currentDayTrips[parseInt(this.getAttribute('data-trip-index'))]);
+                    });
+                });
             }
-            
-            // Zobrazit roletku s náhledem (NE expanded)
+
             const sheet = document.getElementById('bottomSheet');
-            sheet.classList.remove('expanded');
-            sheet.classList.remove('collapsed');
-            
-            // Ujistit se, že je detail viditelný a formulář skrytý
+            sheet.classList.remove('expanded', 'collapsed');
             document.getElementById('tripDetail').style.display = 'block';
-            document.getElementById('tripForm').style.display = 'none';
-            
-            // Skrýt overlay
-            const overlay = document.getElementById('overlay');
-            overlay.classList.remove('visible');
+            document.getElementById('tripForm').style.display   = 'none';
+            document.getElementById('overlay').classList.remove('visible');
         }
 
         function expandBottomSheet() {
-            const sheet = document.getElementById('bottomSheet');
-            const overlay = document.getElementById('overlay');
-            
-            sheet.classList.add('expanded');
-            sheet.classList.remove('collapsed');
-            overlay.classList.add('visible');
-            
-            // Zobrazit detail (skrýt formulář pokud je otevřený)
-            showDetailInSheet();
+            document.getElementById('bottomSheet').classList.add('expanded');
+            document.getElementById('bottomSheet').classList.remove('collapsed');
+            document.getElementById('overlay').classList.add('visible');
         }
 
         function closeBottomSheet() {
-            const sheet = document.getElementById('bottomSheet');
-            const overlay = document.getElementById('overlay');
-            
-            sheet.classList.remove('expanded');
-            sheet.classList.add('collapsed'); // Úplně skrýt
-            overlay.classList.remove('visible');
-            
-            // Resetovat zobrazení v roletce na detail
+            document.getElementById('bottomSheet').classList.remove('expanded');
+            document.getElementById('bottomSheet').classList.add('collapsed');
+            document.getElementById('overlay').classList.remove('visible');
             showDetailInSheet();
         }
 
-        function showFormInSheet() {
+        function showFormInSheet(isEdit) {
             document.getElementById('tripDetail').style.display = 'none';
-            document.getElementById('tripForm').style.display = 'block';
-            
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('tripForm').style.display   = 'block';
+            const options = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
             document.getElementById('formDate').textContent = selectedDate.toLocaleDateString('cs-CZ', options);
         }
 
-        // Skrýt/zobrazit pole pro palety podle vybraného vozidla
+        function showDetailInSheet() {
+            document.getElementById('tripDetail').style.display = 'block';
+            document.getElementById('tripForm').style.display   = 'none';
+        }
+
         document.getElementById('vehicleSheet').addEventListener('change', function() {
             const isPeugeot = this.value === 'peugeot';
-            const palletsInputs = document.querySelectorAll('.pallets-input');
-            
-            palletsInputs.forEach(input => {
-                if (isPeugeot) {
-                    input.style.display = 'none';
-                    input.value = ''; // Vyčistit hodnotu
-                } else {
-                    input.style.display = 'block';
-                }
+            document.querySelectorAll('.pallets-input').forEach(inp => {
+                inp.style.display = isPeugeot ? 'none' : 'block';
+                if (isPeugeot) inp.value = '';
             });
         });
 
-        function showDetailInSheet() {
-            document.getElementById('tripDetail').style.display = 'block';
-            document.getElementById('tripForm').style.display = 'none';
-        }
+        // ===================== EDIT =====================
+        function editTrip(trip) {
+            // *** OPRAVA: uložit kmEnd jako originalKmEnd pro spolehlivou identifikaci ***
+            editingTrip = {
+                originalDatum:     trip.datum,
+                originalTableName: trip.tableName,
+                originalKmStart:   trip.kmStart,
+                originalKmEnd:     trip.kmEnd
+            };
 
-        async function saveTripFromSheet() {
-            const vehicle = document.getElementById('vehicleSheet').value;
-            const kmStart = document.getElementById('kmStartSheet').value;
-            const kmEnd = document.getElementById('kmEndSheet').value;
-            const notes = document.getElementById('notesSheet').value;
-            
-            const locationEntries = document.querySelectorAll('#locationsContainerSheet .location-entry');
-            const locations = [];
-            locationEntries.forEach(entry => {
-                const place = entry.querySelector('.location-input').value;
-                const time = entry.querySelector('.time-input').value;
-                const pallets = entry.querySelector('.pallets-input').value;
-                if (place) {
-                    locations.push({ 
-                        place, 
-                        time: time || null,
-                        pallets: pallets ? parseInt(pallets) : null
-                    });
-                }
+            selectedDate = new Date(normalizeDate(trip.date));
+
+            document.getElementById('vehicleSheet').value  = trip.vehicle;
+            document.getElementById('kmStartSheet').value  = trip.kmStart !== null ? trip.kmStart : '';
+            document.getElementById('kmEndSheet').value    = trip.kmEnd   !== null ? trip.kmEnd   : '';
+            document.getElementById('notesSheet').value    = trip.notes || '';
+
+            const container = document.getElementById('locationsContainerSheet');
+            const entries   = container.querySelectorAll('.location-entry');
+            entries.forEach((entry, i) => {
+                const loc = trip.locations[i];
+                entry.querySelector('.location-input').value  = loc ? (loc.place   || '') : '';
+                entry.querySelector('.time-input').value      = loc ? (loc.time    || '') : '';
+                entry.querySelector('.pallets-input').value   = loc ? (loc.pallets || '') : '';
             });
 
-            if (!vehicle) {
-                alert('Prosím vyberte vozidlo');
-                return;
-            }
+            const saveBtn = document.getElementById('saveTripBtn');
+            saveBtn.textContent = 'Uložit změny';
+            saveBtn.onclick     = updateTrip;
 
-            if (locations.length === 0) {
-                alert('Prosím zadejte alespoň jedno místo');
-                return;
-            }
+            showFormInSheet();
+            expandBottomSheet();
+        }
 
-            // OPRAVENO: Vytvoření správného ISO data pro uložení
+        async function updateTrip() {
+            const vehicle  = document.getElementById('vehicleSheet').value;
+            const kmStart  = document.getElementById('kmStartSheet').value;
+            const kmEnd    = document.getElementById('kmEndSheet').value;
+            const notes    = document.getElementById('notesSheet').value;
+
+            const locations = [];
+            document.querySelectorAll('#locationsContainerSheet .location-entry').forEach(entry => {
+                const place   = entry.querySelector('.location-input').value;
+                const time    = entry.querySelector('.time-input').value;
+                const pallets = entry.querySelector('.pallets-input').value;
+                if (place) locations.push({ place, time: time || null, pallets: pallets ? parseInt(pallets) : null });
+            });
+
+            if (!vehicle)          { alert('Prosím vyberte vozidlo'); return; }
+            if (!locations.length) { alert('Prosím zadejte alespoň jedno místo'); return; }
+
             const tripData = {
-                date: selectedDate.toISOString(),
+                originalDatum:     editingTrip.originalDatum,
+                originalTableName: editingTrip.originalTableName,
+                originalKmStart:   editingTrip.originalKmStart,
+                originalKmEnd:     editingTrip.originalKmEnd,   // *** OPRAVA: přidáno ***
+                date:    selectedDate.toISOString(),
                 vehicle,
-                kmStart: kmStart ? parseFloat(kmStart) : null,
-                kmEnd: kmEnd ? parseFloat(kmEnd) : null,
+                kmStart: kmStart !== '' ? parseFloat(kmStart) : null,
+                kmEnd:   kmEnd   !== '' ? parseFloat(kmEnd)   : null,
+                locations,
+                notes: notes || null
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/update_trip.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tripData)
+                });
+                const text = await response.text();
+                let result;
+                try { result = JSON.parse(text); }
+                catch (e) { alert('Chyba: Backend nevrátil platný JSON\n\n' + text.substring(0, 300)); return; }
+
+                if (result.success) {
+                    alert('Záznam byl úspěšně aktualizován!');
+                    editingTrip = null;
+                    const saveBtn = document.getElementById('saveTripBtn');
+                    saveBtn.textContent = 'Uložit záznam';
+                    saveBtn.onclick     = saveTripFromSheet;
+                    await loadTripsForCalendar();
+                    resetFormSheet();
+                    closeBottomSheet();
+                    setTimeout(() => showBottomSheet(selectedDate), 100);
+                } else {
+                    alert('Chyba při aktualizaci: ' + (result.error || 'Neznámá chyba'));
+                }
+            } catch (error) {
+                alert('Chyba při komunikaci se serverem: ' + error.message);
+            }
+        }
+
+        // ===================== SAVE (nový záznam) =====================
+        async function saveTripFromSheet() {
+            const vehicle  = document.getElementById('vehicleSheet').value;
+            const kmStart  = document.getElementById('kmStartSheet').value;
+            const kmEnd    = document.getElementById('kmEndSheet').value;
+            const notes    = document.getElementById('notesSheet').value;
+
+            const locations = [];
+            document.querySelectorAll('#locationsContainerSheet .location-entry').forEach(entry => {
+                const place   = entry.querySelector('.location-input').value;
+                const time    = entry.querySelector('.time-input').value;
+                const pallets = entry.querySelector('.pallets-input').value;
+                if (place) locations.push({ place, time: time || null, pallets: pallets ? parseInt(pallets) : null });
+            });
+
+            if (!vehicle)          { alert('Prosím vyberte vozidlo'); return; }
+            if (!locations.length) { alert('Prosím zadejte alespoň jedno místo'); return; }
+
+            const tripData = {
+                date:    selectedDate.toISOString(),
+                vehicle,
+                kmStart: kmStart !== '' ? parseFloat(kmStart) : null,
+                kmEnd:   kmEnd   !== '' ? parseFloat(kmEnd)   : null,
                 locations,
                 notes: notes || null
             };
@@ -1127,36 +548,24 @@
             try {
                 const response = await fetch(`${API_URL}/save_trip.php`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(tripData)
                 });
-
                 const text = await response.text();
-                console.log('Save response:', text);
-                
                 let result;
-                try {
-                    result = JSON.parse(text);
-                } catch (e) {
-                    console.error('JSON parse error:', e);
-                    console.error('Response text:', text);
-                    alert('Chyba: Backend nevrátil platný JSON při ukládání.\n\nOdpověď: ' + text.substring(0, 200));
-                    return;
-                }
+                try { result = JSON.parse(text); }
+                catch (e) { alert('Chyba: Backend nevrátil platný JSON'); return; }
 
                 if (result.success) {
                     alert('Záznam byl úspěšně uložen!');
                     await loadTripsForCalendar();
                     resetFormSheet();
                     closeBottomSheet();
-                    showBottomSheet(selectedDate); // Aktualizovat náhled
+                    showBottomSheet(selectedDate);
                 } else {
                     alert('Chyba při ukládání: ' + (result.error || 'Neznámá chyba'));
                 }
             } catch (error) {
-                console.error('Chyba:', error);
                 alert('Chyba při komunikaci se serverem: ' + error.message);
             }
         }
@@ -1164,299 +573,160 @@
         function resetFormSheet() {
             document.getElementById('vehicleSheet').value = '';
             document.getElementById('kmStartSheet').value = '';
-            document.getElementById('kmEndSheet').value = '';
-            document.getElementById('notesSheet').value = '';
-            
-            // Vyčistit všechna pole míst
-            const locationEntries = document.querySelectorAll('#locationsContainerSheet .location-entry');
-            locationEntries.forEach(entry => {
-                entry.querySelector('.location-input').value = '';
-                entry.querySelector('.time-input').value = '';
-                entry.querySelector('.pallets-input').value = '';
+            document.getElementById('kmEndSheet').value   = '';
+            document.getElementById('notesSheet').value   = '';
+            document.querySelectorAll('#locationsContainerSheet .location-entry').forEach(entry => {
+                entry.querySelector('.location-input').value  = '';
+                entry.querySelector('.time-input').value      = '';
+                entry.querySelector('.pallets-input').value   = '';
             });
+            // Resetovat tlačítko na výchozí stav
+            const saveBtn = document.getElementById('saveTripBtn');
+            saveBtn.textContent = 'Uložit záznam';
+            saveBtn.onclick     = saveTripFromSheet;
         }
 
-        function showForm() {
-            document.getElementById('calendarView').style.display = 'none';
-            document.getElementById('formView').style.display = 'block';
-
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('selectedDate').textContent = selectedDate.toLocaleDateString('cs-CZ', options);
+        // ===================== DELETE =====================
+        // *** OPRAVA: přidán parametr kmEnd pro spolehlivou identifikaci ***
+        async function deleteTrip(datum, tableName, kmStart, kmEnd) {
+            if (!confirm('Opravdu chcete smazat tento záznam?')) return;
+            try {
+                const response = await fetch(`${API_URL}/delete_trip.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ datum, tableName, kmStart, kmEnd })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Záznam byl smazán');
+                    renderTable();
+                    await loadTripsForCalendar();
+                } else {
+                    alert('Chyba při mazání: ' + (result.error || 'Neznámá chyba'));
+                }
+            } catch (error) {
+                alert('Chyba při komunikaci se serverem: ' + error.message);
+            }
         }
 
+        // ===================== TABULKA =====================
+        async function renderTable() {
+            const tbody         = document.getElementById('tripsTableBody');
+            const noDataMessage = document.getElementById('noDataMessage');
+            try {
+                const result = await fetch(`${API_URL}/get_trips.php`).then(r => r.json());
+                if (!result.success) throw new Error(result.error || 'Chyba při načítání dat');
+                const trips = result.trips;
+                if (trips.length === 0) { tbody.innerHTML = ''; noDataMessage.style.display = 'block'; return; }
+                noDataMessage.style.display = 'none';
+                tbody.innerHTML = trips.map(trip => {
+                    const dateStr  = new Date(trip.date).toLocaleDateString('cs-CZ', { day:'2-digit', month:'2-digit', year:'numeric' });
+                    const kmDriven = trip.kmEnd - trip.kmStart;
+                    const locsStr  = trip.locations.map(l => {
+                        let t = l.place;
+                        if (l.time)    t += ` (${l.time})`;
+                        if (l.pallets) t += ` [${l.pallets} palet]`;
+                        return t;
+                    }).join(', ');
+                    // *** OPRAVA: předáváme i trip.kmEnd do deleteTrip ***
+                    return `
+                        <tr>
+                            <td>${dateStr}</td>
+                            <td>${trip.vehicleName}</td>
+                            <td>${trip.kmStart !== null ? trip.kmStart : '-'}</td>
+                            <td>${trip.kmEnd   !== null ? trip.kmEnd   : '-'}</td>
+                            <td><strong>${kmDriven} km</strong></td>
+                            <td>${trip.totalPallets > 0 ? trip.totalPallets : '-'}</td>
+                            <td style="max-width:200px;">${locsStr}</td>
+                            <td><button class="delete-btn" onclick='deleteTrip(${JSON.stringify(trip.datum)}, "${trip.tableName}", ${trip.kmStart}, ${trip.kmEnd})'>Smazat</button></td>
+                        </tr>`;
+                }).join('');
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:red;">Chyba: ${error.message}</td></tr>`;
+            }
+        }
+
+        // ===================== KALENDÁŘ - ostatní =====================
         function showCalendar() {
             document.getElementById('calendarView').style.display = 'block';
-            document.getElementById('formView').style.display = 'none';
+            document.getElementById('formView').style.display     = 'none';
             resetForm();
         }
 
         function addLocation() {
             const container = document.getElementById('locationsContainer');
-            const locationEntry = document.createElement('div');
-            locationEntry.className = 'location-entry';
-            locationEntry.innerHTML = `
+            const entry = document.createElement('div');
+            entry.className = 'location-entry';
+            entry.innerHTML = `
                 <input type="text" class="location-input" placeholder="Zadejte místo">
                 <input type="time" class="time-input">
                 <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                <button class="remove-location" onclick="removeLocation(this)">✕</button>
-            `;
-            container.appendChild(locationEntry);
+                <button class="remove-location" onclick="removeLocation(this)">✕</button>`;
+            container.appendChild(entry);
         }
 
-        function removeLocation(button) {
-            button.parentElement.remove();
-        }
+        function removeLocation(button) { button.parentElement.remove(); }
 
         async function saveTrip() {
             const vehicle = document.getElementById('vehicle').value;
             const kmStart = document.getElementById('kmStart').value;
-            const kmEnd = document.getElementById('kmEnd').value;
-            
-            const locationEntries = document.querySelectorAll('.location-entry');
+            const kmEnd   = document.getElementById('kmEnd').value;
             const locations = [];
-            locationEntries.forEach(entry => {
-                const place = entry.querySelector('.location-input').value;
-                const time = entry.querySelector('.time-input').value;
+            document.querySelectorAll('.location-entry').forEach(entry => {
+                const place   = entry.querySelector('.location-input').value;
+                const time    = entry.querySelector('.time-input').value;
                 const pallets = entry.querySelector('.pallets-input').value;
-                if (place) {
-                    locations.push({ 
-                        place, 
-                        time: time || null,
-                        pallets: pallets ? parseInt(pallets) : null
-                    });
-                }
+                if (place) locations.push({ place, time: time || null, pallets: pallets ? parseInt(pallets) : null });
             });
-
-            if (!vehicle) {
-                alert('Prosím vyberte vozidlo');
-                return;
-            }
-
-            if (!kmStart || !kmEnd) {
-                alert('Prosím vyplňte stav kilometrů');
-                return;
-            }
-
-            if (locations.length === 0) {
-                alert('Prosím zadejte alespoň jedno místo');
-                return;
-            }
-
-            const tripData = {
-                date: selectedDate.toISOString(),
-                vehicle,
-                kmStart: parseFloat(kmStart),
-                kmEnd: parseFloat(kmEnd),
-                locations
-            };
-
+            if (!vehicle)          { alert('Prosím vyberte vozidlo'); return; }
+            if (!kmStart || !kmEnd) { alert('Prosím vyplňte stav kilometrů'); return; }
+            if (!locations.length) { alert('Prosím zadejte alespoň jedno místo'); return; }
             try {
-                const response = await fetch(`${API_URL}/save_trip.php`, {
+                const result = await fetch(`${API_URL}/save_trip.php`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(tripData)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('Záznam byl úspěšně uložen!');
-                    await loadTripsForCalendar();
-                    showCalendar();
-                } else {
-                    alert('Chyba při ukládání: ' + (result.error || 'Neznámá chyba'));
-                }
-            } catch (error) {
-                console.error('Chyba:', error);
-                alert('Chyba při komunikaci se serverem: ' + error.message);
-            }
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: selectedDate.toISOString(), vehicle, kmStart: parseFloat(kmStart), kmEnd: parseFloat(kmEnd), locations })
+                }).then(r => r.json());
+                if (result.success) { alert('Záznam byl úspěšně uložen!'); await loadTripsForCalendar(); showCalendar(); }
+                else alert('Chyba při ukládání: ' + (result.error || 'Neznámá chyba'));
+            } catch (error) { alert('Chyba: ' + error.message); }
         }
 
         function resetForm() {
-            document.getElementById('vehicle').value = '';
-            document.getElementById('kmStart').value = '';
-            document.getElementById('kmEnd').value = '';
-            
-            const container = document.getElementById('locationsContainer');
-            container.innerHTML = `
+            document.getElementById('vehicle').value  = '';
+            document.getElementById('kmStart').value  = '';
+            document.getElementById('kmEnd').value    = '';
+            document.getElementById('locationsContainer').innerHTML = `
                 <div class="location-entry">
                     <input type="text" class="location-input" placeholder="Zadejte místo">
                     <input type="time" class="time-input">
                     <input type="number" class="pallets-input" placeholder="Palety" min="0">
-                </div>
-            `;
+                </div>`;
         }
 
         function switchView(view) {
-            const calendarView = document.getElementById('calendarView');
-            const tableView = document.getElementById('tableView');
-            const formView = document.getElementById('formView');
-            const calendarBtn = document.getElementById('calendarBtn');
-            const tableBtn = document.getElementById('tableBtn');
-
-            if (view === 'calendar') {
-                calendarView.style.display = 'block';
-                tableView.style.display = 'none';
-                formView.style.display = 'none';
-                calendarBtn.classList.add('active');
-                tableBtn.classList.remove('active');
-                loadTripsForCalendar();
-            } else if (view === 'table') {
-                calendarView.style.display = 'none';
-                tableView.style.display = 'block';
-                formView.style.display = 'none';
-                calendarBtn.classList.remove('active');
-                tableBtn.classList.add('active');
-                renderTable();
-            }
+            document.getElementById('calendarView').style.display = view === 'calendar' ? 'block' : 'none';
+            document.getElementById('tableView').style.display    = view === 'table'    ? 'block' : 'none';
+            document.getElementById('formView').style.display     = 'none';
+            document.getElementById('calendarBtn').classList.toggle('active', view === 'calendar');
+            document.getElementById('tableBtn').classList.toggle('active',    view === 'table');
+            if (view === 'calendar') loadTripsForCalendar();
+            else renderTable();
         }
 
         async function loadTripsForCalendar() {
             try {
-                const response = await fetch(`${API_URL}/get_trips.php`);
-                const text = await response.text();
-                
-                console.log('Backend response:', text);
-                
+                const text = await fetch(`${API_URL}/get_trips.php`).then(r => r.text());
                 let result;
-                try {
-                    result = JSON.parse(text);
-                } catch (e) {
-                    console.error('JSON parse error:', e);
-                    console.error('Response text:', text);
-                    alert('Chyba: Backend nevrátil platný JSON. Podívejte se do konzole (F12) pro detaily.');
-                    return;
-                }
-
-                if (result.success) {
-                    allTripsData = result.trips;
-                    console.log('Celkem načteno jízd:', allTripsData.length);
-                    console.log('Všechna data z backendu:', allTripsData);
-                    
-                    // Debug - zkontrolovat duplicity
-                    const duplicates = [];
-                    const seen = new Map();
-                    allTripsData.forEach((trip, index) => {
-                        const key = `${trip.date}_${trip.vehicle}_${trip.kmStart}_${trip.kmEnd}`;
-                        if (seen.has(key)) {
-                            duplicates.push({
-                                index,
-                                key,
-                                trip,
-                                original: seen.get(key)
-                            });
-                        } else {
-                            seen.set(key, { index, trip });
-                        }
-                    });
-                    
-                    if (duplicates.length > 0) {
-                        console.warn('⚠️ BACKEND VRACÍ DUPLICITNÍ DATA:', duplicates);
-                    }
-                    
-                    renderCalendar();
-                } else {
-                    console.error('Backend error:', result.error);
-                    if (result.debug_response) {
-                        console.error('Debug response:', result.debug_response);
-                    }
-                }
-            } catch (error) {
-                console.error('Chyba při načítání jízd pro kalendář:', error);
-                alert('Chyba při načítání dat: ' + error.message);
-            }
+                try { result = JSON.parse(text); }
+                catch (e) { alert('Chyba: Backend nevrátil platný JSON'); return; }
+                if (result.success) { allTripsData = result.trips; renderCalendar(); }
+                else console.error('Backend error:', result.error);
+            } catch (error) { alert('Chyba při načítání dat: ' + error.message); }
         }
 
-        async function renderTable() {
-            const tbody = document.getElementById('tripsTableBody');
-            const noDataMessage = document.getElementById('noDataMessage');
-
-            try {
-                const response = await fetch(`${API_URL}/get_trips.php`);
-                const result = await response.json();
-
-                if (!result.success) {
-                    throw new Error(result.error || 'Chyba při načítání dat');
-                }
-
-                const trips = result.trips;
-
-                if (trips.length === 0) {
-                    tbody.innerHTML = '';
-                    noDataMessage.style.display = 'block';
-                    return;
-                }
-
-                noDataMessage.style.display = 'none';
-
-                tbody.innerHTML = trips.map((trip) => {
-                    const date = new Date(trip.date);
-                    const dateStr = date.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    const kmDriven = trip.kmEnd - trip.kmStart;
-                    
-                    const locationsStr = trip.locations.map(loc => {
-                        let text = loc.place;
-                        if (loc.time) text += ` (${loc.time})`;
-                        if (loc.pallets) text += ` [${loc.pallets} palet]`;
-                        return text;
-                    }).join(', ');
-
-                    return `
-                        <tr>
-                            <td>${dateStr}</td>
-                            <td>${trip.vehicleName}</td>
-                            <td>${trip.kmStart}</td>
-                            <td>${trip.kmEnd}</td>
-                            <td><strong>${kmDriven} km</strong></td>
-                            <td>${trip.totalPallets > 0 ? trip.totalPallets : '-'}</td>
-                            <td style="max-width: 200px;">${locationsStr}</td>
-                            <td><button class="delete-btn" onclick='deleteTrip(${JSON.stringify(trip.datum)}, "${trip.tableName}", ${trip.kmStart})'>Smazat</button></td>
-                        </tr>
-                    `;
-                }).join('');
-            } catch (error) {
-                console.error('Chyba při načítání dat:', error);
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: red;">Chyba při načítání dat: ' + error.message + '</td></tr>';
-            }
-        }
-
-        async function deleteTrip(datum, tableName, kmStart) {
-            if (!confirm('Opravdu chcete smazat tento záznam?')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/delete_trip.php`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ datum, tableName, kmStart })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('Záznam byl smazán');
-                    renderTable();
-                } else {
-                    alert('Chyba při mazání: ' + (result.error || 'Neznámá chyba'));
-                }
-            } catch (error) {
-                console.error('Chyba:', error);
-                alert('Chyba při komunikaci se serverem: ' + error.message);
-            }
-        }
-
-        // Click na preview otevře detail
         document.getElementById('sheetPreview').addEventListener('click', expandBottomSheet);
-
-        // Inicializace - skrýt roletku na začátku
         document.getElementById('bottomSheet').classList.add('collapsed');
-
-        // Inicializace kalendáře při načtení stránky
         loadTripsForCalendar();
     </script>
 </body>
