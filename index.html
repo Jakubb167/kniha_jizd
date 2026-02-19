@@ -82,6 +82,9 @@
         .edit-btn { background-color: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; margin-top: 10px; display: inline-block; }
         .edit-btn:hover { background-color: #0056b3; }
         .trip-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+        .fuel-input-wrap { display: flex; align-items: center; gap: 8px; }
+        .fuel-input-wrap input { flex: 1; }
+        .fuel-unit { color: #666; font-size: 15px; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -147,7 +150,7 @@
                     <thead>
                         <tr>
                             <th>Datum</th><th>Vozidlo</th><th>Km start</th><th>Km konec</th>
-                            <th>Ujeto</th><th>Palety</th><th>Místa</th><th>Akce</th>
+                            <th>Ujeto</th><th>Palety</th><th>Tankování</th><th>Místa</th><th>Akce</th>
                         </tr>
                     </thead>
                     <tbody id="tripsTableBody"></tbody>
@@ -197,6 +200,13 @@
                             <label for="kmEndSheet" style="font-size:14px;color:#666;">Konečný</label>
                             <input type="number" id="kmEndSheet" placeholder="0" step="0.1">
                         </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="palivoSheet">⛽ Tankování (nepovinné):</label>
+                    <div class="fuel-input-wrap">
+                        <input type="number" id="palivoSheet" placeholder="Počet litrů" step="0.1" min="0">
+                        <span class="fuel-unit">litrů</span>
                     </div>
                 </div>
                 <div class="form-group">
@@ -337,11 +347,13 @@
                 dayTrips.forEach(t => { if (!vehiclesMap.has(t.vehicle)) vehiclesMap.set(t.vehicle, t.vehicleName); });
                 const totalKm      = dayTrips.reduce((s, t) => s + (t.kmEnd - t.kmStart), 0);
                 const totalPallets = dayTrips.reduce((s, t) => s + t.totalPallets, 0);
+                const totalFuel    = dayTrips.reduce((s, t) => s + (t.palivo || 0), 0);
 
                 document.getElementById('previewInfo').innerHTML = `
                     <div style="margin-bottom:8px;">
                         ${dayTrips.length} ${dayTrips.length === 1 ? 'jízda' : 'jízdy'} • ${totalKm} km
                         ${totalPallets > 0 ? ` • ${totalPallets} palet` : ''}
+                        ${totalFuel > 0 ? ` • ⛽ ${totalFuel} l` : ''}
                     </div>
                     <div class="trip-preview-vehicles">
                         ${Array.from(vehiclesMap.entries()).map(([k,n]) => `
@@ -369,6 +381,7 @@
                             <div class="trip-detail-label">Kilometry</div>
                             <div class="trip-detail-value">${trip.kmStart} → ${trip.kmEnd} (${kmDriven} km)</div>
                             ${trip.totalPallets > 0 ? `<div class="trip-detail-label" style="margin-top:10px;">Palety</div><div class="trip-detail-value">${trip.totalPallets}</div>` : ''}
+                            ${trip.palivo ? `<div class="trip-detail-label" style="margin-top:10px;">⛽ Tankování</div><div class="trip-detail-value">${trip.palivo} litrů</div>` : ''}
                             <div class="trip-detail-label" style="margin-top:10px;">Místa</div>
                             <div class="trip-detail-value">${locsStr}</div>
                             ${trip.notes ? `<div class="trip-detail-label" style="margin-top:10px;">Poznámky</div><div class="trip-detail-value" style="white-space:pre-wrap;">${trip.notes}</div>` : ''}
@@ -427,7 +440,6 @@
 
         // ===================== EDIT =====================
         function editTrip(trip) {
-            // *** OPRAVA: uložit kmEnd jako originalKmEnd pro spolehlivou identifikaci ***
             editingTrip = {
                 originalDatum:     trip.datum,
                 originalTableName: trip.tableName,
@@ -441,6 +453,7 @@
             document.getElementById('kmStartSheet').value  = trip.kmStart !== null ? trip.kmStart : '';
             document.getElementById('kmEndSheet').value    = trip.kmEnd   !== null ? trip.kmEnd   : '';
             document.getElementById('notesSheet').value    = trip.notes || '';
+            document.getElementById('palivoSheet').value   = trip.palivo !== null && trip.palivo !== undefined ? trip.palivo : '';
 
             const container = document.getElementById('locationsContainerSheet');
             const entries   = container.querySelectorAll('.location-entry');
@@ -464,6 +477,7 @@
             const kmStart  = document.getElementById('kmStartSheet').value;
             const kmEnd    = document.getElementById('kmEndSheet').value;
             const notes    = document.getElementById('notesSheet').value;
+            const palivoVal = document.getElementById('palivoSheet').value;
 
             const locations = [];
             document.querySelectorAll('#locationsContainerSheet .location-entry').forEach(entry => {
@@ -480,13 +494,14 @@
                 originalDatum:     editingTrip.originalDatum,
                 originalTableName: editingTrip.originalTableName,
                 originalKmStart:   editingTrip.originalKmStart,
-                originalKmEnd:     editingTrip.originalKmEnd,   // *** OPRAVA: přidáno ***
+                originalKmEnd:     editingTrip.originalKmEnd,
                 date:    selectedDate.toISOString(),
                 vehicle,
                 kmStart: kmStart !== '' ? parseFloat(kmStart) : null,
                 kmEnd:   kmEnd   !== '' ? parseFloat(kmEnd)   : null,
                 locations,
-                notes: notes || null
+                notes:   notes || null,
+                palivo:  palivoVal !== '' ? parseFloat(palivoVal) : null
             };
 
             try {
@@ -520,10 +535,11 @@
 
         // ===================== SAVE (nový záznam) =====================
         async function saveTripFromSheet() {
-            const vehicle  = document.getElementById('vehicleSheet').value;
-            const kmStart  = document.getElementById('kmStartSheet').value;
-            const kmEnd    = document.getElementById('kmEndSheet').value;
-            const notes    = document.getElementById('notesSheet').value;
+            const vehicle   = document.getElementById('vehicleSheet').value;
+            const kmStart   = document.getElementById('kmStartSheet').value;
+            const kmEnd     = document.getElementById('kmEndSheet').value;
+            const notes     = document.getElementById('notesSheet').value;
+            const palivoVal = document.getElementById('palivoSheet').value;
 
             const locations = [];
             document.querySelectorAll('#locationsContainerSheet .location-entry').forEach(entry => {
@@ -542,7 +558,8 @@
                 kmStart: kmStart !== '' ? parseFloat(kmStart) : null,
                 kmEnd:   kmEnd   !== '' ? parseFloat(kmEnd)   : null,
                 locations,
-                notes: notes || null
+                notes:   notes || null,
+                palivo:  palivoVal !== '' ? parseFloat(palivoVal) : null
             };
 
             try {
@@ -575,19 +592,18 @@
             document.getElementById('kmStartSheet').value = '';
             document.getElementById('kmEndSheet').value   = '';
             document.getElementById('notesSheet').value   = '';
+            document.getElementById('palivoSheet').value  = '';
             document.querySelectorAll('#locationsContainerSheet .location-entry').forEach(entry => {
                 entry.querySelector('.location-input').value  = '';
                 entry.querySelector('.time-input').value      = '';
                 entry.querySelector('.pallets-input').value   = '';
             });
-            // Resetovat tlačítko na výchozí stav
             const saveBtn = document.getElementById('saveTripBtn');
             saveBtn.textContent = 'Uložit záznam';
             saveBtn.onclick     = saveTripFromSheet;
         }
 
         // ===================== DELETE =====================
-        // *** OPRAVA: přidán parametr kmEnd pro spolehlivou identifikaci ***
         async function deleteTrip(datum, tableName, kmStart, kmEnd) {
             if (!confirm('Opravdu chcete smazat tento záznam?')) return;
             try {
@@ -628,7 +644,6 @@
                         if (l.pallets) t += ` [${l.pallets} palet]`;
                         return t;
                     }).join(', ');
-                    // *** OPRAVA: předáváme i trip.kmEnd do deleteTrip ***
                     return `
                         <tr>
                             <td>${dateStr}</td>
@@ -637,12 +652,13 @@
                             <td>${trip.kmEnd   !== null ? trip.kmEnd   : '-'}</td>
                             <td><strong>${kmDriven} km</strong></td>
                             <td>${trip.totalPallets > 0 ? trip.totalPallets : '-'}</td>
+                            <td>${trip.palivo ? trip.palivo + ' l' : '-'}</td>
                             <td style="max-width:200px;">${locsStr}</td>
                             <td><button class="delete-btn" onclick='deleteTrip(${JSON.stringify(trip.datum)}, "${trip.tableName}", ${trip.kmStart}, ${trip.kmEnd})'>Smazat</button></td>
                         </tr>`;
                 }).join('');
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:red;">Chyba: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:red;">Chyba: ${error.message}</td></tr>`;
             }
         }
 
