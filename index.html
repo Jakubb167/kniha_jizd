@@ -70,12 +70,6 @@
         .view-toggle { display: flex; gap: 10px; margin-bottom: 20px; }
         .view-toggle button { flex: 1; padding: 12px; border: 2px solid #007bff; background-color: white; color: #007bff; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s; }
         .view-toggle button.active { background-color: #007bff; color: white; }
-        .trips-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        .trips-table th, .trips-table td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        .trips-table th { background-color: #f8f9fa; font-weight: 600; color: #333; position: sticky; top: 0; }
-        .trips-table tr:hover { background-color: #f8f9fa; }
-        .no-data { text-align: center; padding: 40px; color: #999; }
-        .table-container { overflow-x: auto; }
         .delete-btn { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; }
         .delete-btn:hover { background-color: #c82333; }
         .pallets-input { width: 80px !important; font-size: 14px; padding: 10px 6px; }
@@ -85,6 +79,118 @@
         .fuel-input-wrap { display: flex; align-items: center; gap: 8px; }
         .fuel-input-wrap input { flex: 1; }
         .fuel-unit { color: #666; font-size: 15px; white-space: nowrap; }
+
+        /* ===== PŘEHLED ===== */
+        .overview-view { display: none; }
+
+        .day-group { margin-bottom: 26px; }
+        .day-group-header {
+            font-size: 15px;
+            font-weight: 700;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            padding-bottom: 7px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .trip-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px 16px;
+            margin-bottom: 10px;
+        }
+
+        .trip-card-vehicle {
+            font-weight: 700;
+            font-size: 19px;
+            color: #111;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .trip-card-dot {
+            width: 13px; height: 13px;
+            border-radius: 50%;
+            border: 1.5px solid #333;
+            flex-shrink: 0;
+        }
+
+        .trip-locations {
+            margin-bottom: 12px;
+        }
+        .trip-location-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 5px 0;
+            font-size: 17px;
+            color: #333;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .trip-location-row:last-child { border-bottom: none; }
+        .trip-location-name { flex: 1; }
+        .trip-location-time { font-size: 14px; color: #aaa; margin: 0 10px; }
+        .trip-location-pallets {
+            font-size: 16px;
+            color: #856404;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .trip-card-km {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .trip-card-km span { font-weight: 600; color: #222; }
+
+        .trip-card-fuel {
+            font-size: 16px;
+            color: #0c5460;
+        }
+        .trip-card-fuel span { font-weight: 600; }
+
+        .trip-card-notes {
+            font-size: 15px;
+            color: #888;
+            font-style: italic;
+            margin-top: 8px;
+        }
+
+        .trip-card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .trip-card-actions .edit-btn { padding: 8px 16px; font-size: 15px; margin-top: 0; }
+        .trip-card-actions .delete-btn { padding: 8px 14px; font-size: 15px; }
+
+        .no-data { text-align: center; padding: 40px; color: #999; }
+        .overview-loading { text-align: center; padding: 40px; color: #aaa; font-size: 15px; }
+
+        .month-separator {
+            text-align: center;
+            font-size: 11px;
+            color: #bbb;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 20px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .month-separator::before, .month-separator::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #eee;
+        }
     </style>
 </head>
 <body>
@@ -92,7 +198,7 @@
         <h1>📖 Kniha jízd</h1>
         <div class="view-toggle">
             <button id="calendarBtn" class="active" onclick="switchView('calendar')">📅 Kalendář</button>
-            <button id="tableBtn" onclick="switchView('table')">📊 Tabulka</button>
+            <button id="overviewBtn" onclick="switchView('overview')">📋 Přehled</button>
         </div>
 
         <div class="calendar-view" id="calendarView">
@@ -144,20 +250,13 @@
             <button class="save-button" onclick="saveTrip()">Uložit záznam</button>
         </div>
 
-        <div class="table-view" id="tableView">
-            <div class="table-container">
-                <table class="trips-table">
-                    <thead>
-                        <tr>
-                            <th>Datum</th><th>Vozidlo</th><th>Km start</th><th>Km konec</th>
-                            <th>Ujeto</th><th>Palety</th><th>Tankování</th><th>Místa</th><th>Akce</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tripsTableBody"></tbody>
-                </table>
-                <div id="noDataMessage" class="no-data" style="display:none;">Zatím nejsou žádné záznamy</div>
+        <!-- PŘEHLED -->
+        <div class="overview-view" id="overviewView">
+            <div id="overviewContent">
+                <div class="overview-loading">Načítám záznamy…</div>
             </div>
         </div>
+
     </div>
 
     <div class="overlay" id="overlay" onclick="closeBottomSheet()"></div>
@@ -247,9 +346,23 @@
         let allTripsData  = [];
         let currentDayTrips = [];
         let editingTrip   = null;
+        let activeVehicleFilter = 'all'; // kept for compatibility
 
         const monthNames = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
         const dayNames   = ['Po','Út','St','Čt','Pá','So','Ne'];
+
+        const vehicleNames = {
+            'cervene-iveco': 'Červené Iveco',
+            'iveco-mysak':   'Iveco Myšák',
+            'atego':         'Atego',
+            'peugeot':       'Peugeot'
+        };
+        const vehicleColors = {
+            'cervene-iveco': '#dc3545',
+            'iveco-mysak':   '#fff',
+            'atego':         '#6c757d',
+            'peugeot':       '#000'
+        };
 
         function getLocalDateString(date) {
             const y = date.getFullYear();
@@ -533,7 +646,7 @@
             }
         }
 
-        // ===================== SAVE (nový záznam) =====================
+        // ===================== SAVE =====================
         async function saveTripFromSheet() {
             const vehicle   = document.getElementById('vehicleSheet').value;
             const kmStart   = document.getElementById('kmStartSheet').value;
@@ -615,8 +728,8 @@
                 const result = await response.json();
                 if (result.success) {
                     alert('Záznam byl smazán');
-                    renderTable();
                     await loadTripsForCalendar();
+                    renderOverview();
                 } else {
                     alert('Chyba při mazání: ' + (result.error || 'Neznámá chyba'));
                 }
@@ -625,44 +738,113 @@
             }
         }
 
-        // ===================== TABULKA =====================
-        async function renderTable() {
-            const tbody         = document.getElementById('tripsTableBody');
-            const noDataMessage = document.getElementById('noDataMessage');
-            try {
-                const result = await fetch(`${API_URL}/get_trips.php`).then(r => r.json());
-                if (!result.success) throw new Error(result.error || 'Chyba při načítání dat');
-                const trips = result.trips;
-                if (trips.length === 0) { tbody.innerHTML = ''; noDataMessage.style.display = 'block'; return; }
-                noDataMessage.style.display = 'none';
-                tbody.innerHTML = trips.map(trip => {
-                    const dateStr  = new Date(trip.date).toLocaleDateString('cs-CZ', { day:'2-digit', month:'2-digit', year:'numeric' });
-                    const kmDriven = trip.kmEnd - trip.kmStart;
-                    const locsStr  = trip.locations.map(l => {
-                        let t = l.place;
-                        if (l.time)    t += ` (${l.time})`;
-                        if (l.pallets) t += ` [${l.pallets} palet]`;
-                        return t;
-                    }).join(', ');
-                    return `
-                        <tr>
-                            <td>${dateStr}</td>
-                            <td>${trip.vehicleName}</td>
-                            <td>${trip.kmStart !== null ? trip.kmStart : '-'}</td>
-                            <td>${trip.kmEnd   !== null ? trip.kmEnd   : '-'}</td>
-                            <td><strong>${kmDriven} km</strong></td>
-                            <td>${trip.totalPallets > 0 ? trip.totalPallets : '-'}</td>
-                            <td>${trip.palivo ? trip.palivo + ' l' : '-'}</td>
-                            <td style="max-width:200px;">${locsStr}</td>
-                            <td><button class="delete-btn" onclick='deleteTrip(${JSON.stringify(trip.datum)}, "${trip.tableName}", ${trip.kmStart}, ${trip.kmEnd})'>Smazat</button></td>
-                        </tr>`;
-                }).join('');
-            } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:red;">Chyba: ${error.message}</td></tr>`;
-            }
+        // ===================== PŘEHLED =====================
+        function setVehicleFilter(vehicle, btn) {
+            activeVehicleFilter = vehicle;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderOverview();
         }
 
-        // ===================== KALENDÁŘ - ostatní =====================
+        function renderOverview() {
+            const content = document.getElementById('overviewContent');
+
+            // Deduplicate
+            const seen = new Map();
+            allTripsData.forEach(t => {
+                const k = `${t.date}_${t.vehicle}_${t.kmStart}_${t.kmEnd}`;
+                if (!seen.has(k)) seen.set(k, t);
+            });
+            let trips = Array.from(seen.values());
+
+            if (trips.length === 0) {
+                content.innerHTML = `<div class="no-data">Žádné záznamy</div>`;
+                return;
+            }
+
+            // Sort newest first
+            trips.sort((a, b) => normalizeDate(b.date).localeCompare(normalizeDate(a.date)));
+
+            // Group by date
+            const groups = new Map();
+            trips.forEach(trip => {
+                const dateStr = normalizeDate(trip.date);
+                if (!groups.has(dateStr)) groups.set(dateStr, []);
+                groups.get(dateStr).push(trip);
+            });
+
+            let html = '';
+            let lastMonth = '';
+
+            groups.forEach((dayTrips, dateStr) => {
+                const dateObj = new Date(dateStr + 'T00:00:00');
+                const monthKey = `${dateObj.getFullYear()}-${dateObj.getMonth()}`;
+
+                if (monthKey !== lastMonth) {
+                    lastMonth = monthKey;
+                    html += `<div class="month-separator">${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}</div>`;
+                }
+
+                const weekday = dateObj.toLocaleDateString('cs-CZ', { weekday: 'short' });
+                const dayNum  = dateObj.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' });
+
+                html += `<div class="day-group">
+                    <div class="day-group-header">${weekday} ${dayNum}</div>`;
+
+                dayTrips.forEach(trip => {
+                    const color = vehicleColors[trip.vehicle] || '#ccc';
+                    const vName = trip.vehicleName || vehicleNames[trip.vehicle] || trip.vehicle;
+
+                    const locsHTML = trip.locations.map(l => {
+                        const pallets = l.pallets ? `<span class="trip-location-pallets">${l.pallets} pal.</span>` : '';
+                        const time    = l.time ? `<span class="trip-location-time">${l.time}</span>` : '';
+                        return `<div class="trip-location-row">
+                            <span class="trip-location-name">${l.place}</span>
+                            ${time}
+                            ${pallets}
+                        </div>`;
+                    }).join('');
+
+                    const kmLine = (trip.kmStart !== null && trip.kmEnd !== null)
+                        ? `<div class="trip-card-km">${trip.kmStart} → ${trip.kmEnd} km</div>` : '';
+
+                    const fuelLine = trip.palivo
+                        ? `<div class="trip-card-fuel">⛽ ${trip.palivo} l</div>` : '';
+
+                    const notesLine = trip.notes
+                        ? `<div class="trip-card-notes">${trip.notes}</div>` : '';
+
+                    html += `<div class="trip-card">
+                        <div class="trip-card-vehicle">
+                            <div class="trip-card-dot" style="background:${color};"></div>
+                            ${vName}
+                        </div>
+                        <div class="trip-locations">${locsHTML}</div>
+                        ${kmLine}
+                        ${fuelLine}
+                        ${notesLine}
+                        <div class="trip-card-actions">
+                            <button class="edit-btn" onclick='editTripFromOverview(${JSON.stringify(trip)})'>✏️ Upravit</button>
+                            <button class="delete-btn" onclick='deleteTrip(${JSON.stringify(trip.datum)}, "${trip.tableName}", ${trip.kmStart}, ${trip.kmEnd})'>Smazat</button>
+                        </div>
+                    </div>`;
+                });
+
+                html += `</div>`;
+            });
+
+            content.innerHTML = html;
+        }
+
+        function editTripFromOverview(trip) {
+            // Switch to calendar view and open edit
+            switchView('calendar');
+            setTimeout(() => {
+                editTrip(trip);
+            }, 100);
+        }
+
+        // ===================== CALENDAR helpers =====================
         function showCalendar() {
             document.getElementById('calendarView').style.display = 'block';
             document.getElementById('formView').style.display     = 'none';
@@ -694,9 +876,9 @@
                 const pallets = entry.querySelector('.pallets-input').value;
                 if (place) locations.push({ place, time: time || null, pallets: pallets ? parseInt(pallets) : null });
             });
-            if (!vehicle)          { alert('Prosím vyberte vozidlo'); return; }
+            if (!vehicle)           { alert('Prosím vyberte vozidlo'); return; }
             if (!kmStart || !kmEnd) { alert('Prosím vyplňte stav kilometrů'); return; }
-            if (!locations.length) { alert('Prosím zadejte alespoň jedno místo'); return; }
+            if (!locations.length)  { alert('Prosím zadejte alespoň jedno místo'); return; }
             try {
                 const result = await fetch(`${API_URL}/save_trip.php`, {
                     method: 'POST',
@@ -721,13 +903,13 @@
         }
 
         function switchView(view) {
-            document.getElementById('calendarView').style.display = view === 'calendar' ? 'block' : 'none';
-            document.getElementById('tableView').style.display    = view === 'table'    ? 'block' : 'none';
-            document.getElementById('formView').style.display     = 'none';
+            document.getElementById('calendarView').style.display  = view === 'calendar' ? 'block' : 'none';
+            document.getElementById('overviewView').style.display  = view === 'overview' ? 'block' : 'none';
+            document.getElementById('formView').style.display      = 'none';
             document.getElementById('calendarBtn').classList.toggle('active', view === 'calendar');
-            document.getElementById('tableBtn').classList.toggle('active',    view === 'table');
+            document.getElementById('overviewBtn').classList.toggle('active',  view === 'overview');
             if (view === 'calendar') loadTripsForCalendar();
-            else renderTable();
+            if (view === 'overview') renderOverview();
         }
 
         async function loadTripsForCalendar() {
