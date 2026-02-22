@@ -173,6 +173,90 @@
 
         .no-data { text-align: center; padding: 40px; color: #999; }
         .overview-loading { text-align: center; padding: 40px; color: #aaa; font-size: 15px; }
+        .day-total { text-align: right; font-size: 14px; font-weight: 700; color: #007bff; padding: 4px 4px 10px; }
+
+        /* ===== SCRUBBER ===== */
+        .scrubber-track {
+            position: fixed;
+            right: 8px;
+            top: 0;
+            bottom: 0;
+            width: 36px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            touch-action: none;
+            user-select: none;
+        }
+        .scrubber-track.visible { display: flex; }
+
+        .scrubber-handle {
+            position: absolute;
+            right: 0;
+            width: 36px;
+            height: 52px;
+            background: #007bff;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 3px;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.4);
+            cursor: grab;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: box-shadow 0.15s;
+        }
+        .scrubber-handle:active { cursor: grabbing; box-shadow: 0 4px 16px rgba(0,123,255,0.5); }
+        .scrubber-handle-line {
+            width: 16px; height: 2px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .scrubber-axis {
+            position: fixed;
+            right: 52px;
+            top: 0;
+            bottom: 0;
+            background: rgba(25,25,25,0.93);
+            border-radius: 14px;
+            padding: 16px 0;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 499;
+            min-width: 120px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+        .scrubber-axis.visible { display: flex; }
+
+        .scrubber-axis-item {
+            padding: 6px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.45);
+            text-align: right;
+            white-space: nowrap;
+            transition: color 0.1s, font-size 0.1s;
+            line-height: 1.2;
+        }
+        .scrubber-axis-item.active {
+            color: #fff;
+            font-size: 15px;
+        }
+        .scrubber-axis-indicator {
+            position: absolute;
+            right: 0;
+            width: 4px;
+            background: #007bff;
+            border-radius: 2px 0 0 2px;
+            top: 16px;
+            bottom: 16px;
+        }
 
         .month-separator {
             text-align: center;
@@ -337,6 +421,15 @@
             </div>
         </div>
     </div>
+
+    <div class="scrubber-track" id="scrubberTrack">
+        <div class="scrubber-handle" id="scrubberHandle">
+            <div class="scrubber-handle-line"></div>
+            <div class="scrubber-handle-line"></div>
+            <div class="scrubber-handle-line"></div>
+        </div>
+    </div>
+    <div class="scrubber-axis" id="scrubberAxis"></div>
 
     <script>
         const API_URL = 'https://knihajizd.baborovsky-jakub.workers.dev';
@@ -759,6 +852,7 @@
 
             if (trips.length === 0) {
                 content.innerHTML = `<div class="no-data">Žádné záznamy</div>`;
+                buildScrubber([]);
                 return;
             }
 
@@ -775,18 +869,26 @@
 
             let html = '';
             let lastMonth = '';
+            const monthAnchors = []; // { label, id }
 
             groups.forEach((dayTrips, dateStr) => {
                 const dateObj = new Date(dateStr + 'T00:00:00');
-                const monthKey = `${dateObj.getFullYear()}-${dateObj.getMonth()}`;
+                const monthKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth()).padStart(2,'0')}`;
 
                 if (monthKey !== lastMonth) {
                     lastMonth = monthKey;
-                    html += `<div class="month-separator">${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}</div>`;
+                    const anchorId = `month-${monthKey}`;
+                    const label = monthNames[dateObj.getMonth()].substring(0,3).toUpperCase();
+                    monthAnchors.push({ label, id: anchorId, full: `${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}` });
+                    html += `<div class="month-separator" id="${anchorId}">${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}</div>`;
                 }
 
                 const weekday = dateObj.toLocaleDateString('cs-CZ', { weekday: 'short' });
                 const dayNum  = dateObj.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' });
+
+                const dayKm = dayTrips.reduce((s, t) => {
+                    return s + ((t.kmStart !== null && t.kmEnd !== null) ? (t.kmEnd - t.kmStart) : 0);
+                }, 0);
 
                 html += `<div class="day-group">
                     <div class="day-group-header">${weekday} ${dayNum}</div>`;
@@ -805,8 +907,9 @@
                         </div>`;
                     }).join('');
 
+                    const kmDriven = (trip.kmStart !== null && trip.kmEnd !== null) ? (trip.kmEnd - trip.kmStart) : null;
                     const kmLine = (trip.kmStart !== null && trip.kmEnd !== null)
-                        ? `<div class="trip-card-km">${trip.kmStart} → ${trip.kmEnd} km</div>` : '';
+                        ? `<div class="trip-card-km">${trip.kmStart} → ${trip.kmEnd} km <span style="color:#aaa;font-weight:400">(${kmDriven} km)</span></div>` : '';
 
                     const fuelLine = trip.palivo
                         ? `<div class="trip-card-fuel">⛽ ${trip.palivo} l</div>` : '';
@@ -830,10 +933,163 @@
                     </div>`;
                 });
 
-                html += `</div>`;
+                html += `</div>
+                    ${dayKm > 0 ? `<div class="day-total">Celkem: ${dayKm} km</div>` : ''}
+                `;
             });
 
             content.innerHTML = html;
+            buildScrubber(monthAnchors);
+        }
+
+        // ===================== SCRUBBER =====================
+        function buildScrubber(anchors) {
+            const track  = document.getElementById('scrubberTrack');
+            const handle = document.getElementById('scrubberHandle');
+            const axis   = document.getElementById('scrubberAxis');
+
+            if (anchors.length === 0) {
+                track.classList.remove('visible');
+                axis.classList.remove('visible');
+                return;
+            }
+
+            // Anchors: index 0 = newest (top), last = oldest (bottom)
+            // Build axis — newest on top, oldest on bottom
+            axis.innerHTML = anchors.map((a, i) =>
+                `<div class="scrubber-axis-item" data-index="${i}">${a.full}</div>`
+            ).join('');
+
+            track.classList.add('visible');
+
+            const HANDLE_H   = 52;
+            const PADDING     = 16; // axis top/bottom padding
+            let isDragging   = false;
+            let axisVisible  = false;
+
+            function getTrackBounds() {
+                const vh = window.innerHeight;
+                return { top: PADDING, bottom: vh - PADDING, height: vh - PADDING * 2 };
+            }
+
+            function setHandlePos(y) {
+                const { top, bottom } = getTrackBounds();
+                const clamped = Math.max(top + HANDLE_H / 2, Math.min(bottom - HANDLE_H / 2, y));
+                handle.style.top  = clamped + 'px';
+                handle.style.transform = 'translateY(-50%)';
+            }
+
+            function showAxis() {
+                axisVisible = true;
+                axis.classList.add('visible');
+            }
+            function hideAxis() {
+                axisVisible = false;
+                axis.classList.remove('visible');
+            }
+
+            // Map handle Y position → anchor index
+            function yToAnchorIndex(y) {
+                const { top, bottom, height } = getTrackBounds();
+                const ratio = (y - top) / height;
+                const idx   = Math.round(ratio * (anchors.length - 1));
+                return Math.max(0, Math.min(anchors.length - 1, idx));
+            }
+
+            // Map anchor index → Y position
+            function anchorIndexToY(idx) {
+                const { top, height } = getTrackBounds();
+                return top + (idx / Math.max(anchors.length - 1, 1)) * height;
+            }
+
+            function highlightAxisItem(idx) {
+                axis.querySelectorAll('.scrubber-axis-item').forEach((el, i) => {
+                    el.classList.toggle('active', i === idx);
+                });
+            }
+
+            function scrollToAnchor(idx) {
+                const target = document.getElementById(anchors[idx].id);
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // Sync handle to page scroll
+            function syncHandleToScroll() {
+                if (isDragging) return;
+                const scrollY  = window.scrollY;
+                const maxScroll = document.body.scrollHeight - window.innerHeight;
+                if (maxScroll <= 0) return;
+                const ratio = scrollY / maxScroll;
+                const { top, height } = getTrackBounds();
+                setHandlePos(top + ratio * height);
+            }
+            window.addEventListener('scroll', syncHandleToScroll, { passive: true });
+
+            // Initialize handle position
+            syncHandleToScroll();
+
+            // Pointer / touch events
+            function onDragStart(clientY) {
+                isDragging = true;
+                showAxis();
+                setHandlePos(clientY);
+                syncScrollToHandle(clientY);
+                highlightNearestAxisItem(clientY);
+            }
+
+            function onDragMove(clientY) {
+                if (!isDragging) return;
+                setHandlePos(clientY);
+                syncScrollToHandle(clientY);
+                highlightNearestAxisItem(clientY);
+            }
+
+            function onDragEnd() {
+                isDragging = false;
+                setTimeout(hideAxis, 400);
+            }
+
+            // Volný scroll podle pozice posuvníku
+            function syncScrollToHandle(clientY) {
+                const { top, height } = getTrackBounds();
+                const ratio = Math.max(0, Math.min(1, (clientY - top) / height));
+                const maxScroll = document.body.scrollHeight - window.innerHeight;
+                window.scrollTo({ top: ratio * maxScroll, behavior: 'instant' });
+            }
+
+            // Zvýraznit nejbližší měsíc na ose (jen vizuálně)
+            function highlightNearestAxisItem(clientY) {
+                const { top, height } = getTrackBounds();
+                const ratio = Math.max(0, Math.min(1, (clientY - top) / height));
+                const idx = Math.round(ratio * (anchors.length - 1));
+                highlightAxisItem(Math.max(0, Math.min(anchors.length - 1, idx)));
+            }
+
+            // Mouse
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                onDragStart(e.clientY);
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) onDragMove(e.clientY);
+            });
+            document.addEventListener('mouseup', () => {
+                if (isDragging) onDragEnd();
+            });
+
+            // Touch
+            handle.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                onDragStart(e.touches[0].clientY);
+            }, { passive: false });
+            handle.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                onDragMove(e.touches[0].clientY);
+            }, { passive: false });
+            handle.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                onDragEnd();
+            }, { passive: false });
         }
 
         function editTripFromOverview(trip) {
@@ -908,6 +1164,10 @@
             document.getElementById('formView').style.display      = 'none';
             document.getElementById('calendarBtn').classList.toggle('active', view === 'calendar');
             document.getElementById('overviewBtn').classList.toggle('active',  view === 'overview');
+            if (view !== 'overview') {
+                document.getElementById('scrubberTrack').classList.remove('visible');
+                document.getElementById('scrubberAxis').classList.remove('visible');
+            }
             if (view === 'calendar') loadTripsForCalendar();
             if (view === 'overview') renderOverview();
         }
